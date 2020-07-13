@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	helper "gitlab.jasondale.me/jdale/pace-api/pkg/utils"
+	helper "github.com/coma-toast/pace-api/pkg/utils"
 
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
@@ -37,10 +37,11 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetPaceDataHandler handles api calls for paceData
 func GetPaceDataHandler(w http.ResponseWriter, r *http.Request) {
-	data, err := helper.ReadSectorData()
-	if err != nil {
-		log.Panicln("Error decoding cached data", err)
-	}
+	data := "test data - GetPaceDataHandler()"
+	// data, err := helper.ReadSectorData()
+	// if err != nil {
+	// 	log.Panicln("Error decoding cached data", err)
+	// }
 	encoder := json.NewEncoder(w)
 	// TODO: finish here  https://yourbasic.org/golang/json-example/#encode-marshal-struct-to-json
 	if err := encoder.Encode(&data); err != nil {
@@ -51,7 +52,7 @@ func GetPaceDataHandler(w http.ResponseWriter, r *http.Request) {
 
 // UpdatePaceDataHandler handles api calls for paceData
 func UpdatePaceDataHandler(w http.ResponseWriter, r *http.Request) {
-	var data sector.Sector
+	var data string
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&data); err != nil {
 		log.Println("Error decoding JSON: ", err)
