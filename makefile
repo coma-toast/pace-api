@@ -1,5 +1,5 @@
 PROJECT_NAME := "pace-api"
-PKG := "https://github.com/coma-toast/$(PROJECT_NAME)"
+PKG := "github.com/coma-toast/$(PROJECT_NAME)"
 PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 

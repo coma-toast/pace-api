@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	helper "github.com/coma-toast/pace-api/pkg/utils"
-
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
 )
@@ -25,7 +23,7 @@ func main() {
 	r.HandleFunc("/api/paceData", UpdatePaceDataHandler).Methods("POST")
 	r.Use(loggingMiddleware)
 
-	log.Fatal(http.ListenAndServe(":8000", r))
+	log.Fatal(http.ListenAndServe(":8001", r))
 }
 
 // TODO: auth middleware
@@ -56,8 +54,8 @@ func UpdatePaceDataHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&data); err != nil {
 		log.Println("Error decoding JSON: ", err)
-	} else {
-		helper.UpdateData(data)
+		// } else {
+		// 	helper.UpdateData(data)
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Settin'\n"))
