@@ -8,7 +8,7 @@ type User struct {
 	Created   time.Time
 	FirstName string
 	LastName  string
-	Role      string
+	Role      []string
 	Username  string
 	Password  string
 	Email     string

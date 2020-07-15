@@ -2,8 +2,12 @@ package project
 
 import "time"
 
+// TODO: contact structs
+// If you want historical data, leave it.
+// If you want phone number update, for eample, use a contact id
 // Project is a construction project
 type Project struct {
+	ProjectID           string
 	Created             time.Time
 	StartDate           time.Time
 	DueDate             time.Time
