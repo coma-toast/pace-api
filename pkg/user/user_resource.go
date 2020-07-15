@@ -8,9 +8,11 @@ type User struct {
 	Created   time.Time
 	FirstName string
 	LastName  string
+	Role      string
 	Username  string
+	Password  string
 	Email     string
 	Phone     string
-	TimeZone  time.TimeZone
+	TimeZone  time.Location
 	DarkMode  bool
 }

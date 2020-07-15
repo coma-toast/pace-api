@@ -11,7 +11,17 @@ type Project struct {
 	City                string
 	State               string
 	Zip                 int32
+	ProjectManager      string
+	ClientName          string
+	EORName             string
+	DetailerName        string
+	InspectionLab       string
+	SteelErectorName    string
+	SteelFabricatorName string
+	GeneralContractor   string
 	PrimaryContactName  string
 	PrimaryContactPhone string
 	PrimaryContactEmail string
+	SquareFootage       int32
+	WeightInTons        int32
 }

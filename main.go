@@ -14,13 +14,15 @@ import (
 // TODO: save to DB instead of local json so it looks better for resume
 
 func main() {
+	conf := getConf()
+	_ = conf
 	r := mux.NewRouter()
 	// r.Use(authMiddle)
 	// r.Handle("/api", authMiddle(blaHandler)).Methods(http.)
 	// r.Methods("GET", "POST")
 	r.HandleFunc("/ping", PingHandler)
-	r.HandleFunc("/api/paceData", GetPaceDataHandler).Methods("GET")
-	r.HandleFunc("/api/paceData", UpdatePaceDataHandler).Methods("POST")
+	r.HandleFunc("/api/user", GetUserHandler).Methods("GET")
+	r.HandleFunc("/api/user", UpdateUserHandler).Methods("POST")
 	r.Use(loggingMiddleware)
 
 	log.Fatal(http.ListenAndServe(":8001", r))
@@ -33,9 +35,10 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Pong\n"))
 }
 
-// GetPaceDataHandler handles api calls for paceData
-func GetPaceDataHandler(w http.ResponseWriter, r *http.Request) {
-	data := "test data - GetPaceDataHandler()"
+// GetUserHandler handles api calls for User
+func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	// db := firebase.Connect(conf.FirebaseConfig)
+	data := "test data - GetUserHandler()"
 	// data, err := helper.ReadSectorData()
 	// if err != nil {
 	// 	log.Panicln("Error decoding cached data", err)
@@ -48,8 +51,8 @@ func GetPaceDataHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(data)
 }
 
-// UpdatePaceDataHandler handles api calls for paceData
-func UpdatePaceDataHandler(w http.ResponseWriter, r *http.Request) {
+// UpdateUserHandler handles api calls for User
+func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var data string
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&data); err != nil {
@@ -73,7 +76,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 		unquoteJSONString, err := strconv.Unquote(string(buf))
 		if err != nil {
-			log.Println("Error sanitizing JSON ", err)
+			log.Println("Error sanitizing JSON: ", err)
 		}
 
 		rdr1 := ioutil.NopCloser(strings.NewReader(unquoteJSONString))
