@@ -12,7 +12,7 @@ import (
 )
 
 // Connect is the Firebase DB connection
-func Connect(firebaseConfig string) *firestore.Client {
+func Connect(firebaseConfig firebase.Config) *firestore.Client {
 	var client *firestore.Client
 	ctx := context.Background()
 	opt := option.WithCredentialsFile(firebaseConfig)

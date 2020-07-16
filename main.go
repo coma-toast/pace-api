@@ -15,7 +15,13 @@ import (
 
 func main() {
 	conf := getConf()
-	_ = conf
+	var firebaseConfig firebase.Config
+	fbConfig, err := ioutil.ReadFile(conf.FirebaseConfig)
+	json.Unmarshal(fbConfig, &firebaseConfig)
+	spew.Dump(firebaseConfig)
+	if err != nil {
+		log.Println("Error reading Firebase Config: ", err)
+	}
 	r := mux.NewRouter()
 	// r.Use(authMiddle)
 	// r.Handle("/api", authMiddle(blaHandler)).Methods(http.)
@@ -37,7 +43,7 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetUserHandler handles api calls for User
 func GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	db := firebase.Connect(conf.FirebaseConfig)
+	db := firebase.Connect(firebaseConfig)
 	users := db.Collection("Users")
 	spew.Dump(users)
 	data := "test data - GetUserHandler()"
