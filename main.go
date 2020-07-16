@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/coma-toast/pace-api/pkg/firebase"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
 )
@@ -35,7 +37,9 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetUserHandler handles api calls for User
 func GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	// db := firebase.Connect(conf.FirebaseConfig)
+	db := firebase.Connect(conf.FirebaseConfig)
+	users := db.Collection("Users")
+	spew.Dump(users)
 	data := "test data - GetUserHandler()"
 	// data, err := helper.ReadSectorData()
 	// if err != nil {

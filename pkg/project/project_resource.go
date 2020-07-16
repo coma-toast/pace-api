@@ -3,7 +3,7 @@ package project
 import (
 	"time"
 
-	"github.com/coma-toast/pace-api/pkg/firebase/contact"
+	"github.com/coma-toast/pace-api/pkg/contact"
 )
 
 // TODO: contact structs

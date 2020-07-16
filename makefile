@@ -8,3 +8,10 @@ dep: ## Get the dependencies
 
 build: dep ## Build the binary file
 	@go build -i -v $(PKG)
+
+deploy: build
+	ssh jjd \
+	'pkill pace-api'
+	rsync pace-api jjd:/home/jason/www-data/pace-api/
+	ssh jjd \
+	'/home/jason/www-data/pace-api/pace-api &; disown'
