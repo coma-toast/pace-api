@@ -1,6 +1,10 @@
 package project
 
-import "time"
+import (
+	"time"
+
+	"github.com/coma-toast/pace-api/pkg/firebase/contact"
+)
 
 // TODO: contact structs
 // If you want historical data, leave it.
@@ -15,15 +19,15 @@ type Project struct {
 	City                string
 	State               string
 	Zip                 int32
-	ProjectManager      string
-	ClientName          string
-	EORName             string
-	DetailerName        string
-	InspectionLab       string
-	SteelErectorName    string
-	SteelFabricatorName string
-	GeneralContractor   string
-	PrimaryContactName  string
+	ProjectManager      contact.Contact
+	ClientName          contact.Contact
+	EORName             contact.Contact
+	DetailerName        contact.Contact
+	InspectionLab       contact.Contact
+	SteelErectorName    contact.Contact
+	SteelFabricatorName contact.Contact
+	GeneralContractor   contact.Contact
+	PrimaryContactName  contact.Contact
 	PrimaryContactPhone string
 	PrimaryContactEmail string
 	SquareFootage       int32

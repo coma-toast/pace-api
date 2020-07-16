@@ -4,7 +4,7 @@ import "time"
 
 // User is the user data
 type User struct {
-	id        string
+	ID        string
 	Created   time.Time
 	FirstName string
 	LastName  string

@@ -11,8 +11,6 @@ import (
 	"github.com/hashicorp/hcl/hcl/strconv"
 )
 
-// TODO: save to DB instead of local json so it looks better for resume
-
 func main() {
 	conf := getConf()
 	_ = conf
