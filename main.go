@@ -11,10 +11,24 @@ import (
 	"github.com/coma-toast/pace-api/pkg/firebase"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
+	"github.com/rollbar/rollbar-go"
 )
 
 func main() {
 	conf = getConf()
+
+	rollbar.SetToken("bf847265e87f4f8490f695694e0f2451")
+	rollbar.SetEnvironment("production")                    // defaults to "development"
+	rollbar.SetCodeVersion("v0.0.1")                        // optional Git hash/branch/tag (required for GitHub integration)
+	rollbar.SetServerHost("web.1")                          // optional override; defaults to hostname
+	rollbar.SetServerRoot("github.com/coma-toast/pace-api") // path of project (required for GitHub integration and non-project stacktrace collapsing)
+
+	rollbar.Critical("test err")
+
+	rollbar.Info("Message body goes here")
+
+	rollbar.Wait()
+
 	r := mux.NewRouter()
 	// r.Use(authMiddle)
 	// r.Handle("/api", authMiddle(blaHandler)).Methods(http.)

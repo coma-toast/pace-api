@@ -17,7 +17,7 @@ type Client struct {
 }
 
 // Connect is the Firebase DB connection
-func (c *Client) Connect(firebaseConfig string) *firestore.Client {
+func Connect(firebaseConfig string) *firestore.Client {
 	var client *firestore.Client
 	ctx := context.Background()
 	opt := option.WithCredentialsFile(firebaseConfig)
