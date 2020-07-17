@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"cloud.google.com/go/firestore"
-	"github.com/davecgh/go-spew/spew"
 	"golang.org/x/net/context"
 
 	firebase "firebase.google.com/go"
@@ -18,7 +17,6 @@ func Connect(firebaseConfig string) *firestore.Client {
 	ctx := context.Background()
 	opt := option.WithCredentialsFile(firebaseConfig)
 	config := &firebase.Config{ProjectID: "pace-37aef"}
-	spew.Dump(opt)
 	app, err := firebase.NewApp(ctx, config, opt)
 	if err != nil {
 		log.Fatalf("firebase.NewApp: %v", err)

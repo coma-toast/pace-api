@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -8,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/coma-toast/pace-api/pkg/firebase"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
 )
@@ -36,13 +36,27 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 
 // GetUserHandler handles api calls for User
 func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	db := firebase.Connect(conf.FirebaseConfig)
-	users := db.Collection("Users")
-	spew.Dump(users)
-	data := "test data - GetUserHandler()"
+	users := db.Collection("users")
+	user := users.Doc("qDPcO4YcV9YZEhXegDgb")
+	userData, err := user.Get(ctx)
+	data := userData.Data()
+	if err != nil {
+		log.Println("error getting user ", err)
+	}
 	// data, err := helper.ReadSectorData()
 	// if err != nil {
-	// 	log.Panicln("Error decoding cached data", err)
+	// 	log.Panicln("Error reading", err)
+	// }
+	// example:
+	// 	_, _, err := client.Collection("users").Add(ctx, map[string]interface{}{
+	//         "first": "Ada",
+	//         "last":  "Lovelace",
+	//         "born":  1815,
+	// })
+	// if err != nil {
+	//         log.Fatalf("Failed adding alovelace: %v", err)
 	// }
 	encoder := json.NewEncoder(w)
 	// TODO: finish here  https://yourbasic.org/golang/json-example/#encode-marshal-struct-to-json
