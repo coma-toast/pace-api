@@ -1,2 +1,2 @@
 DocumentDBUrl: "firebase.com"
-FirebaseConfig: "~/Sync/Config/Firebase.json"
+FirebaseConfig: "./Firebase.json"

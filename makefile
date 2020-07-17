@@ -9,6 +9,9 @@ dep: ## Get the dependencies
 build: dep ## Build the binary file
 	@go build -i -v $(PKG)
 
+build-mac: dep ## Build for Mac dev machine. Prod will be linux
+	@GOOS="darwin" go build -i -v $(PKG)
+
 deploy: build
 	ssh jjd \
 	'pkill pace-api'
