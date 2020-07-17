@@ -4,12 +4,14 @@ This is the API endpoint for the PaCE app. This API will be a liaison between th
 
 
 TODO: 
+
 Demo:
-DB
-API
-Basic app
+
+* DB
+* API
+* Basic app
 
 Pre-launch:
-Import take off sheet data as inventory
-DB of all shapes
+* Import take off sheet data as inventory
+* DB of all shapes
 

@@ -11,8 +11,13 @@ import (
 	"google.golang.org/api/option"
 )
 
+// Client is the firestore client
+type Client struct {
+	client *firestore.Client
+}
+
 // Connect is the Firebase DB connection
-func Connect(firebaseConfig string) *firestore.Client {
+func (c *Client) Connect(firebaseConfig string) *firestore.Client {
 	var client *firestore.Client
 	ctx := context.Background()
 	opt := option.WithCredentialsFile(firebaseConfig)

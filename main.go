@@ -49,7 +49,7 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	// if err != nil {
 	// 	log.Panicln("Error reading", err)
 	// }
-	// example:
+	// add user example:
 	// 	_, _, err := client.Collection("users").Add(ctx, map[string]interface{}{
 	//         "first": "Ada",
 	//         "last":  "Lovelace",
