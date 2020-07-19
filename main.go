@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,16 +18,13 @@ import (
 func main() {
 	conf = getConf()
 
-	rollbar.SetToken("bf847265e87f4f8490f695694e0f2451")
+	// Rollbar logging setup
+	rollbar.SetToken(conf.RollbarToken)
 	rollbar.SetEnvironment("production")                    // defaults to "development"
 	rollbar.SetCodeVersion("v0.0.1")                        // optional Git hash/branch/tag (required for GitHub integration)
 	rollbar.SetServerHost("web.1")                          // optional override; defaults to hostname
 	rollbar.SetServerRoot("github.com/coma-toast/pace-api") // path of project (required for GitHub integration and non-project stacktrace collapsing)
-
-	rollbar.Critical("test err")
-
-	rollbar.Info("Message body goes here")
-
+	rollbar.Info("PACE-API starting up...")
 	rollbar.Wait()
 
 	r := mux.NewRouter()
@@ -34,7 +32,7 @@ func main() {
 	// r.Handle("/api", authMiddle(blaHandler)).Methods(http.)
 	// r.Methods("GET", "POST")
 	r.HandleFunc("/ping", PingHandler)
-	r.HandleFunc("/api/user", GetUserHandler).Methods("GET")
+	r.HandleFunc("/api/user/{userName}", GetUserHandler).Methods("GET")
 	r.HandleFunc("/api/user", UpdateUserHandler).Methods("POST")
 	r.Use(loggingMiddleware)
 
@@ -45,11 +43,17 @@ func main() {
 
 // PingHandler is just a quick test to ensure api calls are working.
 func PingHandler(w http.ResponseWriter, r *http.Request) {
+	// Dev code alert
+	rollbar.Info(
+		fmt.Sprintf("Ping test sent from %s", r.Header.Get("X-FORWARDED-FOR")))
 	w.Write([]byte("Pong\n"))
 }
 
 // GetUserHandler handles api calls for User
 func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Get all the URL vars .../{userName}/{whatever}
+	vars := mux.Vars(r)
+	userName := vars["userName"]
 	ctx := context.Background()
 	db := firebase.Connect(conf.FirebaseConfig)
 	users := db.Collection("users")
@@ -57,12 +61,14 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	userData, err := user.Get(ctx)
 	data := userData.Data()
 	if err != nil {
-		log.Println("error getting user ", err)
+		rollbar.Warning(
+			fmt.Sprintf("Error getting user %s from Firebase: %e", userName, err))
 	}
 	// data, err := helper.ReadSectorData()
 	// if err != nil {
 	// 	log.Panicln("Error reading", err)
 	// }
+
 	// add user example:
 	// 	_, _, err := client.Collection("users").Add(ctx, map[string]interface{}{
 	//         "first": "Ada",

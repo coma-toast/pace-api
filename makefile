@@ -13,8 +13,8 @@ build-mac: dep ## Build for Mac dev machine. Prod will be linux
 	@GOOS="darwin" go build -i -v $(PKG)
 
 deploy: build
-	ssh jjd \
-	'pkill pace-api'
+	# ssh jjd \
+	# 'pkill pace-api'
 	rsync pace-api jjd:/home/jason/www-data/pace-api/
-	ssh jjd \
-	'/home/jason/www-data/pace-api/pace-api &; disown'
+	# ssh jjd \
+	# '/home/jason/www-data/pace-api/pace-api &; disown'
