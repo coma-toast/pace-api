@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/coma-toast/pace-api/pkg/firebase"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
 	"github.com/rollbar/rollbar-go"
@@ -31,7 +32,7 @@ func main() {
 	// r.Use(authMiddle)
 	// r.Handle("/api", authMiddle(blaHandler)).Methods(http.)
 	// r.Methods("GET", "POST")
-	r.HandleFunc("/ping", PingHandler)
+	r.HandleFunc("/api/ping", PingHandler)
 	r.HandleFunc("/api/user/{userName}", GetUserHandler).Methods("GET")
 	r.HandleFunc("/api/user", UpdateUserHandler).Methods("POST")
 	r.Use(loggingMiddleware)
@@ -43,43 +44,48 @@ func main() {
 
 // PingHandler is just a quick test to ensure api calls are working.
 func PingHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	// Dev code alert
 	rollbar.Info(
 		fmt.Sprintf("Ping test sent from %s", r.Header.Get("X-FORWARDED-FOR")))
-	w.Write([]byte("Pong\n"))
+	data := "Pong"
+	encoder := json.NewEncoder(w)
+	if err := encoder.Encode(&data); err != nil {
+		log.Println("Error encoding JSON: ", err)
+	}
+	log.Println(data)
+	// json.NewEncoder(w).Encode(data)
 }
+
+// add user example:
+// 	_, _, err := client.Collection("users").Add(ctx, map[string]interface{}{
+//         "first": "Ada",
+//         "last":  "Lovelace",
+//         "born":  1815,
+// })
+// if err != nil {
+//         log.Fatalf("Failed adding alovelace: %v", err)
+// }
 
 // GetUserHandler handles api calls for User
 func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	// Get all the URL vars .../{userName}/{whatever}
 	vars := mux.Vars(r)
 	userName := vars["userName"]
 	ctx := context.Background()
 	db := firebase.Connect(conf.FirebaseConfig)
-	users := db.Collection("users")
-	user := users.Doc("qDPcO4YcV9YZEhXegDgb")
-	userData, err := user.Get(ctx)
-	data := userData.Data()
+	users := db.Collection("users").Where("username", "==", userName).Documents(ctx)
+	allMatchingUsers, err := users.GetAll()
 	if err != nil {
 		rollbar.Warning(
 			fmt.Sprintf("Error getting user %s from Firebase: %e", userName, err))
 	}
-	// data, err := helper.ReadSectorData()
-	// if err != nil {
-	// 	log.Panicln("Error reading", err)
-	// }
+	for _, user := range allMatchingUsers {
+		spew.Dump(user.data())
+	}
 
-	// add user example:
-	// 	_, _, err := client.Collection("users").Add(ctx, map[string]interface{}{
-	//         "first": "Ada",
-	//         "last":  "Lovelace",
-	//         "born":  1815,
-	// })
-	// if err != nil {
-	//         log.Fatalf("Failed adding alovelace: %v", err)
-	// }
 	encoder := json.NewEncoder(w)
-	// TODO: finish here  https://yourbasic.org/golang/json-example/#encode-marshal-struct-to-json
 	if err := encoder.Encode(&data); err != nil {
 		log.Println("Error encoding JSON: ", err)
 	}
