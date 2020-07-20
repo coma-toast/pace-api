@@ -7,14 +7,25 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os/user"
 	"strings"
 
+	"github.com/coma-toast/pace-api/pkg/container"
 	"github.com/coma-toast/pace-api/pkg/firebase"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
 	"github.com/rollbar/rollbar-go"
+	"google.golang.org/genproto/googleapis/firestore/v1"
 )
+
+type App struct {
+	container *container.Container
+}
+
+// TODO: look at Aaron's hub repo to see how to do the providers/connections.
+type UserProvider struct {
+	User *firestore.Client
+}
 
 func main() {
 	conf = getConf()
@@ -28,13 +39,19 @@ func main() {
 	rollbar.Info("PACE-API starting up...")
 	rollbar.Wait()
 
+	db := firebase.Connect(conf.FirebaseConfig)
+	container := &container.Container{Firebase: db}
+
+	app := App{container: container}
+
 	r := mux.NewRouter()
 	// r.Use(authMiddle)
 	// r.Handle("/api", authMiddle(blaHandler)).Methods(http.)
 	// r.Methods("GET", "POST")
 	r.HandleFunc("/api/ping", PingHandler)
 	r.HandleFunc("/api/user/{userName}", GetUserHandler).Methods("GET")
-	r.HandleFunc("/api/user", UpdateUserHandler).Methods("POST")
+	r.HandleFunc("/api/user/{userName}", UpdateUserHandler).Methods("POST")
+	// r.HandleFunc("/api/user", CreateUserHandler).Methods("PUT") // TODO: create user? or update auto creates?
 	r.Use(loggingMiddleware)
 
 	log.Fatal(http.ListenAndServe(":8001", r))
@@ -57,46 +74,44 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 	// json.NewEncoder(w).Encode(data)
 }
 
-// add user example:
-// 	_, _, err := client.Collection("users").Add(ctx, map[string]interface{}{
-//         "first": "Ada",
-//         "last":  "Lovelace",
-//         "born":  1815,
-// })
-// if err != nil {
-//         log.Fatalf("Failed adding alovelace: %v", err)
-// }
-
 // GetUserHandler handles api calls for User
-func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+func (a App) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	data := make(map[string]string, 0)
+	data := make([]interface{}, 0)
 	// Get all the URL vars .../{userName}/{whatever}
 	vars := mux.Vars(r)
 	userName := vars["userName"]
 	ctx := context.Background()
-	db := firebase.Connect(conf.FirebaseConfig)
-	users := db.Collection("users").Where("username", "==", userName).Documents(ctx)
+	users := a.container.Firebase.Collection("users").Where("username", "==", userName).Documents(ctx)
 	allMatchingUsers, err := users.GetAll()
 	if err != nil {
 		rollbar.Warning(
 			fmt.Sprintf("Error getting user %s from Firebase: %e", userName, err))
 	}
 	for _, fbUser := range allMatchingUsers {
-		spew.Dump(fbUser.data())
-		data = append(data, fbUser.data())
+		data = append(data, fbUser.Data())
 	}
 
 	encoder := json.NewEncoder(w)
 	if err := encoder.Encode(&data); err != nil {
-		log.Println("Error encoding JSON: ", err)
+		rollbar.Warning(fmt.Sprintf("Error encoding JSON when retrieving a User: %e", err))
 	}
 	log.Println(data)
 }
 
 // UpdateUserHandler handles api calls for User
 func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
-	var data string
+	w.Header().Set("Content-Type", "application/json")
+	var user user.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %e", err))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	data := make([]interface{}, 0)
+	vars := mux.Vars(r)
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&data); err != nil {
 		log.Println("Error decoding JSON: ", err)
@@ -106,6 +121,16 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Settin'\n"))
 }
+
+// add user example:
+// 	_, _, err := client.Collection("users").Add(ctx, map[string]interface{}{
+//         "first": "Ada",
+//         "last":  "Lovelace",
+//         "born":  1815,
+// })
+// if err != nil {
+//         log.Fatalf("Failed adding alovelace: %v", err)
+// }
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
