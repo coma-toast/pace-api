@@ -70,6 +70,7 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 // GetUserHandler handles api calls for User
 func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	data := make(map[string]string, 0)
 	// Get all the URL vars .../{userName}/{whatever}
 	vars := mux.Vars(r)
 	userName := vars["userName"]
@@ -81,8 +82,9 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 		rollbar.Warning(
 			fmt.Sprintf("Error getting user %s from Firebase: %e", userName, err))
 	}
-	for _, user := range allMatchingUsers {
-		spew.Dump(user.data())
+	for _, fbUser := range allMatchingUsers {
+		spew.Dump(fbUser.data())
+		data = append(data, fbUser.data())
 	}
 
 	encoder := json.NewEncoder(w)
