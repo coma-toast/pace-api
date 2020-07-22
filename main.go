@@ -10,19 +10,22 @@ import (
 	"os/user"
 	"strings"
 
+	"cloud.google.com/go/firestore"
 	"github.com/coma-toast/pace-api/pkg/container"
-	"github.com/coma-toast/pace-api/pkg/firebase"
+	"github.com/coma-toast/pace-api/pkg/firestoredb"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
 	"github.com/rollbar/rollbar-go"
-	"google.golang.org/genproto/googleapis/firestore/v1"
 )
 
+// App is the app container
 type App struct {
 	container *container.Container
 }
 
 // TODO: look at Aaron's hub repo to see how to do the providers/connections.
+
+// UserProvider provides a firestore Client for Users
 type UserProvider struct {
 	User *firestore.Client
 }
@@ -39,8 +42,8 @@ func main() {
 	rollbar.Info("PACE-API starting up...")
 	rollbar.Wait()
 
-	db := firebase.Connect(conf.FirebaseConfig)
-	container := &container.Container{Firebase: db}
+	db := firestoredb.Connect(conf.FirebaseConfig)
+	container := &container.Container{Firestore: db}
 
 	app := App{container: container}
 
@@ -49,8 +52,8 @@ func main() {
 	// r.Handle("/api", authMiddle(blaHandler)).Methods(http.)
 	// r.Methods("GET", "POST")
 	r.HandleFunc("/api/ping", PingHandler)
-	r.HandleFunc("/api/user/{userName}", GetUserHandler).Methods("GET")
-	r.HandleFunc("/api/user/{userName}", UpdateUserHandler).Methods("POST")
+	r.HandleFunc("/api/user/{userName}", app.GetUserHandler).Methods("GET")
+	r.HandleFunc("/api/user/{userName}", app.UpdateUserHandler).Methods("POST")
 	// r.HandleFunc("/api/user", CreateUserHandler).Methods("PUT") // TODO: create user? or update auto creates?
 	r.Use(loggingMiddleware)
 
@@ -82,7 +85,7 @@ func (a App) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userName := vars["userName"]
 	ctx := context.Background()
-	users := a.container.Firebase.Collection("users").Where("username", "==", userName).Documents(ctx)
+	users := a.container.Firestore.Collection("users").Where("username", "==", userName).Documents(ctx)
 	allMatchingUsers, err := users.GetAll()
 	if err != nil {
 		rollbar.Warning(
@@ -100,7 +103,7 @@ func (a App) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateUserHandler handles api calls for User
-func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (a App) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var user user.User
 	err := json.NewDecoder(r.Body).Decode(&user)
