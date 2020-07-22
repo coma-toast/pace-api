@@ -12,16 +12,21 @@ import (
 )
 
 // Client is the firestore client
-type Client struct {
-	client *firestore.Client
+type Client interface {
+	Connect() (*firestore.Client, error)
+}
+
+type DB struct {
+	firebaseConfig string
+	ProjectID      string "pace-37aef"
 }
 
 // Connect is the Firebase DB connection
-func Connect(firebaseConfig string) *firestore.Client {
+func (d DB) Connect() *firestore.Client {
 	var client *firestore.Client
 	ctx := context.Background()
 	opt := option.WithCredentialsFile(firebaseConfig)
-	config := &firebase.Config{ProjectID: "pace-37aef"}
+	config := &firebase.Config{}
 	app, err := firebase.NewApp(ctx, config, opt)
 	if err != nil {
 		log.Fatalf("firebase.NewApp: %v", err)
