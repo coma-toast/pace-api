@@ -1,18 +1,16 @@
 package entity
 
-import "time"
-
 // User is the user data
 type User struct {
-	ID        string
-	Created   time.Time
+	ID        int
+	Created   string
 	FirstName string
 	LastName  string
-	Role      []string
+	Role      string
 	Username  string
 	Password  string
 	Email     string
 	Phone     string
-	TimeZone  time.Location
+	TimeZone  string
 	DarkMode  bool
 }
