@@ -84,6 +84,7 @@ func (a App) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	users := a.container.Firebase.Collection("users").Where("username", "==", userName).Documents(ctx)
 	allMatchingUsers, err := users.GetAll()
+
 	if err != nil {
 		rollbar.Warning(
 			fmt.Sprintf("Error getting user %s from Firebase: %e", userName, err))
