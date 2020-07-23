@@ -10,6 +10,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/coma-toast/pace-api/pkg/container"
+	"github.com/coma-toast/pace-api/pkg/entity"
 	"github.com/coma-toast/pace-api/pkg/paceconfig"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
@@ -36,7 +37,7 @@ func Run() {
 
 	conf, err := paceconfig.GetConf()
 	if err != nil {
-		log.Fatalf("Error getting config: %e", err)
+		log.Fatalf("Error getting config: %s", err)
 	}
 
 	// Rollbar logging setup
@@ -70,14 +71,9 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	// Dev code alert
 	rollbar.Info(
-		fmt.Sprintf("Ping test sent from %s", r.Header.Get("X-FORWARDED-FOR")))
+		fmt.Sprintf("Ping test sent from %s", r.Header.Get("X-FORWARDED-FOR")), r)
 	data := "Pong"
-	encoder := json.NewEncoder(w)
-	if err := encoder.Encode(&data); err != nil {
-		rollbar.Warning(fmt.Sprintf("Error encoding JSON: %e", err), r)
-	}
-	log.Println(data)
-	// json.NewEncoder(w).Encode(data)
+	jsonResponse(http.StatusOK, data, w)
 }
 
 // GetUserHandler handles api calls for User
@@ -85,14 +81,14 @@ func (a App) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	userName := r.URL.Query().Get("username")
 	provider, err := a.Container.UserProvider()
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error getting UserProvider: %e", err), r)
+		rollbar.Warning(fmt.Sprintf("Error getting UserProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err, w)
 		return
 	}
 	if userName == "" {
 		allUsers, err := provider.GetAll()
 		if err != nil {
-			rollbar.Warning(fmt.Sprintf("Error getting All Users: %e", err), r)
+			rollbar.Warning(fmt.Sprintf("Error getting All Users: %s", err), r)
 			jsonResponse(http.StatusInternalServerError, err, w)
 			return
 		}
@@ -100,7 +96,7 @@ func (a App) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		user, err := provider.GetByUsername(userName)
 		if err != nil {
-			rollbar.Warning(fmt.Sprintf("Error getting User: %e", err), r)
+			rollbar.Warning(fmt.Sprintf("Error getting User: %s", err), r)
 			jsonResponse(http.StatusInternalServerError, err, w)
 			return
 		}
@@ -108,33 +104,31 @@ func (a App) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func jsonResponse(statusCode int, v interface{}, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	data, _ := json.Marshal(v)
-	w.Write(data)
-}
-
 // UpdateUserHandler handles api calls for User
 func (a App) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
-	// var user user.User
-	// err := json.NewDecoder(r.Body).Decode(&user)
-	// if err != nil {
-	// 	rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %e", err),r)
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
+	var user entity.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
 
-	// data := make([]interface{}, 0)
-	// vars := mux.Vars(r)
-	// decoder := json.NewDecoder(r.Body)
-	// if err := decoder.Decode(&data); err != nil {
-	// 	rollbar.Warning(fmt.Sprintf("Error decoding JSON: %e", err),r)
-	// 	// } else {
-	// 	// 	helper.UpdateData(data)
-	// }
-	// w.WriteHeader(http.StatusOK)
-	// w.Write([]byte("Settin'\n"))
+	provider, err := a.Container.UserProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting UserProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	updatedUser, err := provider.UpdateUser(user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error setting UserProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, updatedUser, w)
 }
 
 // add user example:
@@ -146,6 +140,13 @@ func (a App) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 // if err != nil {
 //         log.Fatalf("Failed adding alovelace: %v", err)
 // }
+
+func jsonResponse(statusCode int, v interface{}, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	data, _ := json.Marshal(v)
+	w.Write(data)
+}
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -159,7 +160,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 		unquoteJSONString, err := strconv.Unquote(string(buf))
 		if err != nil {
-			rollbar.Warning(fmt.Sprintf("Error sanitizing JSON: %e", err), r)
+			rollbar.Warning(fmt.Sprintf("Error sanitizing JSON: %s", err), r)
 		}
 
 		rdr1 := ioutil.NopCloser(strings.NewReader(unquoteJSONString))
