@@ -74,7 +74,7 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 	data := "Pong"
 	encoder := json.NewEncoder(w)
 	if err := encoder.Encode(&data); err != nil {
-		rollbar.Warning(fmt.Sprintf("Error encoding JSON: %e", err))
+		rollbar.Warning(fmt.Sprintf("Error encoding JSON: %e", err), r)
 	}
 	log.Println(data)
 	// json.NewEncoder(w).Encode(data)
@@ -85,18 +85,27 @@ func (a App) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	userName := r.URL.Query().Get("username")
 	provider, err := a.Container.UserProvider()
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error getting UserProvider: %e", err))
+		rollbar.Warning(fmt.Sprintf("Error getting UserProvider: %e", err), r)
 		jsonResponse(http.StatusInternalServerError, err, w)
 		return
 	}
-
-	user, err := provider.GetByUsername(userName)
-	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error getting User: %e", err), r)
-		jsonResponse(http.StatusInternalServerError, err, w)
-		return
+	if userName == "" {
+		allUsers, err := provider.GetAll()
+		if err != nil {
+			rollbar.Warning(fmt.Sprintf("Error getting All Users: %e", err), r)
+			jsonResponse(http.StatusInternalServerError, err, w)
+			return
+		}
+		jsonResponse(http.StatusOK, allUsers, w)
+	} else {
+		user, err := provider.GetByUsername(userName)
+		if err != nil {
+			rollbar.Warning(fmt.Sprintf("Error getting User: %e", err), r)
+			jsonResponse(http.StatusInternalServerError, err, w)
+			return
+		}
+		jsonResponse(http.StatusOK, user, w)
 	}
-	jsonResponse(http.StatusOK, user, w)
 }
 
 func jsonResponse(statusCode int, v interface{}, w http.ResponseWriter) {
@@ -111,7 +120,7 @@ func (a App) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	// var user user.User
 	// err := json.NewDecoder(r.Body).Decode(&user)
 	// if err != nil {
-	// 	rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %e", err))
+	// 	rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %e", err),r)
 	// 	http.Error(w, err.Error(), http.StatusBadRequest)
 	// 	return
 	// }
@@ -120,7 +129,7 @@ func (a App) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 	// decoder := json.NewDecoder(r.Body)
 	// if err := decoder.Decode(&data); err != nil {
-	// 	rollbar.Warning(fmt.Sprintf("Error decoding JSON: %e", err))
+	// 	rollbar.Warning(fmt.Sprintf("Error decoding JSON: %e", err),r)
 	// 	// } else {
 	// 	// 	helper.UpdateData(data)
 	// }
@@ -150,7 +159,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 		unquoteJSONString, err := strconv.Unquote(string(buf))
 		if err != nil {
-			rollbar.Warning(fmt.Sprintf("Error sanitizing JSON: %e", err))
+			rollbar.Warning(fmt.Sprintf("Error sanitizing JSON: %e", err), r)
 		}
 
 		rdr1 := ioutil.NopCloser(strings.NewReader(unquoteJSONString))

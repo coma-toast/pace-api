@@ -22,6 +22,31 @@ func (d *DatabaseProvider) GetByUsername(username string) (entity.User, error) {
 	return d.getByUsername(username)
 }
 
+// GetAll gets a User by username
+func (d *DatabaseProvider) GetAll() ([]entity.User, error) {
+	return d.getAll()
+}
+
+func (d *DatabaseProvider) getAll() ([]entity.User, error) {
+	var users []entity.User
+
+	allUserData, err := d.Database.Collection("users").Documents(context.TODO()).GetAll()
+	if err != nil {
+		return []entity.User{}, err
+	}
+
+	for _, userData := range allUserData {
+		var user entity.User
+		err := userData.DataTo(&user)
+		if err != nil {
+			return []entity.User{}, fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
 func (d *DatabaseProvider) getByUsername(username string) (entity.User, error) {
 	var user entity.User
 
