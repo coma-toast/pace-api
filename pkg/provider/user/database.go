@@ -65,7 +65,7 @@ func (d *DatabaseProvider) AddUser(newUserData entity.User) (entity.User, error)
 
 // UpdateUser is to update a user record
 func (d *DatabaseProvider) UpdateUser(newUserData entity.User) (entity.User, error) {
-	currentUserData, err := d.getByUserID(newUserData.ID)
+	currentUserData, err := d.getByUsername(newUserData.Username)
 	if err != nil {
 		return entity.User{}, err
 	}

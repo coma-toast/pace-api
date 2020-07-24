@@ -6,12 +6,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"cloud.google.com/go/firestore"
 	"github.com/coma-toast/pace-api/pkg/container"
 	"github.com/coma-toast/pace-api/pkg/entity"
 	"github.com/coma-toast/pace-api/pkg/paceconfig"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/hcl/hcl/strconv"
 	"github.com/rollbar/rollbar-go"
@@ -59,9 +61,11 @@ func Run() {
 	r.HandleFunc("/api/user", app.GetUserHandler).Methods("GET")
 	r.HandleFunc("/api/user", app.UpdateUserHandler).Methods("POST")
 	// r.HandleFunc("/api/user", CreateUserHandler).Methods("PUT") // TODO: create user? or update auto creates?
-	r.Use(loggingMiddleware)
+	// r.Use(loggingMiddleware)
+	// Gorilla Mux's logging handler.
+	loggedRouter := handlers.LoggingHandler(os.Stdout, r)
 
-	log.Fatal(http.ListenAndServe(":8001", r))
+	log.Fatal(http.ListenAndServe(":8001", loggedRouter))
 }
 
 // TODO: auth middleware
