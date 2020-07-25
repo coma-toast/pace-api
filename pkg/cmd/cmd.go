@@ -110,7 +110,7 @@ func (a App) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUserHandler handles api calls for User
 func (a App) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
-	var user entity.User
+	var user entity.UpdateUserRequest
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %s", err), r)

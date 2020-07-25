@@ -64,7 +64,7 @@ func (d *DatabaseProvider) AddUser(newUserData entity.User) (entity.User, error)
 }
 
 // UpdateUser is to update a user record
-func (d *DatabaseProvider) UpdateUser(newUserData entity.User) (entity.User, error) {
+func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (entity.User, error) {
 	currentUserData, err := d.getByUsername(newUserData.Username)
 	if err != nil {
 		return entity.User{}, err
@@ -103,7 +103,7 @@ func (d *DatabaseProvider) getByUserID(userID string) (entity.User, error) {
 	return user, nil
 }
 
-func (d *DatabaseProvider) setByUserID(userID string, userData entity.User) error {
+func (d *DatabaseProvider) setByUserID(userID string, userData entity.UpdateUserRequest) error {
 	_, err := d.Database.Collection("users").Doc(userID).Set(context.TODO(), userData)
 	if err != nil {
 		return fmt.Errorf("Error setting user %s by ID: %s", userID, err)
@@ -115,7 +115,7 @@ func (d *DatabaseProvider) setByUserID(userID string, userData entity.User) erro
 func (d *DatabaseProvider) getByUsername(username string) (entity.User, error) {
 	var user entity.User
 
-	users := d.Database.Collection("users").Where("username", "==", username).Documents(context.TODO())
+	users := d.Database.Collection("users").Where("Username", "==", username).Documents(context.TODO())
 	allMatchingUsers, err := users.GetAll()
 	if err != nil {
 		return entity.User{}, err
