@@ -69,23 +69,31 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 	if err != nil {
 		return entity.User{}, err
 	}
-	rollbar.Info(fmt.Sprintf("Updating userID %s. \nOld Data: %v \nNew Data: %v", newUserData.ID, currentUserData, newUserData))
-	updatedUser := entity.User{}
+	rollbar.Info(fmt.Sprintf("Updating userID %s. \nOld Data: %v \nNew Data: %v", currentUserData.ID, currentUserData, newUserData))
+	updatedUser := entity.User{
+		ID:        currentUserData.ID,
+		Created:   currentUserData.Created,
+		FirstName: newUserData.FirstName,
+		LastName:  newUserData.LastName,
+		Role:      newUserData.Role,
+		Username:  newUserData.Username,
+		Password:  currentUserData.Password,
+		Email:     newUserData.Email,
+		Phone:     newUserData.Phone,
+		TimeZone:  newUserData.TimeZone,
+		DarkMode:  newUserData.DarkMode,
+	}
 
-	err = d.setByUserID(newUserData.ID, newUserData)
+	err = d.setByUserID(currentUserData.ID, updatedUser)
 	if err != nil {
 		return entity.User{}, err
 	}
-	updatedUserData, err := d.getByUserID(newUserData.ID)
+	updatedUserData, err := d.getByUserID(updatedUser.ID)
 	if err != nil {
 		return entity.User{}, err
 	}
 
 	return updatedUserData, nil
-}
-
-func (d *DatabaseProvider) combineUserTypes(user entity.User, updateUser entity.UpdateUserRequest) entity.User {
-
 }
 
 func (d *DatabaseProvider) addUser(userData entity.User) (*firestore.DocumentRef, error) {
