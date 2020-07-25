@@ -17,7 +17,6 @@ type User struct {
 
 // UpdateUserRequest is a passwordless user entity
 type UpdateUserRequest struct {
-	ID        string `json:"id"`
 	Created   string `json:"created"`
 	FirstName string `json:"firstname"`
 	LastName  string `json:"lastname"`
