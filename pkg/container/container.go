@@ -7,6 +7,7 @@ import (
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
 	"github.com/coma-toast/pace-api/pkg/paceconfig"
+	"github.com/coma-toast/pace-api/pkg/provider/contact"
 	"github.com/coma-toast/pace-api/pkg/provider/user"
 	"google.golang.org/api/option"
 )
@@ -20,7 +21,8 @@ type Container interface {
 type Production struct {
 	config *paceconfig.Config
 	// Providers
-	userProvider *user.DatabaseProvider
+	userProvider    *user.DatabaseProvider
+	contactProvider *contact.DatabaseProvider
 	// Clients
 	firestoreClient *firestore.Client
 	// Mutex Locks

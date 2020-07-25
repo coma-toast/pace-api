@@ -11,7 +11,7 @@ import (
 // If you want phone number update, for eample, use a contact id
 // Project is a construction project
 type Project struct {
-	ProjectID           string
+	ID                  string
 	Created             time.Time
 	StartDate           time.Time
 	DueDate             time.Time

@@ -59,6 +59,12 @@ func Run() {
 	r.HandleFunc("/api/user", app.UpdateUserHandler).Methods("POST")
 	r.HandleFunc("/api/user", app.CreateUserHandler).Methods("PUT")
 	r.HandleFunc("/api/user", app.DeleteUserHandler).Methods("DELETE")
+	// TODO:  r.HandleFunc("/api/password", app.PasswordHandler).Methods("POST")
+	r.HandleFunc("/api/Contact", app.GetContactHandler).Methods("GET")
+	r.HandleFunc("/api/Contact", app.UpdateContactHandler).Methods("POST")
+	r.HandleFunc("/api/Contact", app.CreateContactHandler).Methods("PUT")
+	r.HandleFunc("/api/Contact", app.DeleteContactHandler).Methods("DELETE")
+
 	// r.Use(loggingMiddleware)
 	// Gorilla Mux's logging handler.
 	loggedRouter := handlers.LoggingHandler(os.Stdout, r)
@@ -76,6 +82,35 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Sprintf("Ping test sent from %s", r.Header.Get("X-FORWARDED-FOR")), r)
 	data := "Pong"
 	jsonResponse(http.StatusOK, data, w)
+}
+
+func (a App) GetContactHandler(w http.ResponseWriter, r *http.Request) {
+	provider, err := a.Container.ContactProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err, r))
+		jsonResponse(http.StatusInternalServerError, err, w)
+	}
+}
+func (a App) UpdateContactHandler(w http.ResponseWriter, r *http.Request) {
+	provider, err := a.Container.ContactProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err, r))
+		jsonResponse(http.StatusInternalServerError, err, w)
+	}
+}
+func (a App) CreateContactHandler(w http.ResponseWriter, r *http.Request) {
+	provider, err := a.Container.ContactProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err, r))
+		jsonResponse(http.StatusInternalServerError, err, w)
+	}
+}
+func (a App) DeleteContactHandler(w http.ResponseWriter, r *http.Request) {
+	provider, err := a.Container.ContactProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err, r))
+		jsonResponse(http.StatusInternalServerError, err, w)
+	}
 }
 
 // GetUserHandler handles api calls for User
