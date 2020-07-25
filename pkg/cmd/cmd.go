@@ -58,6 +58,7 @@ func Run() {
 	r.HandleFunc("/api/user", app.GetUserHandler).Methods("GET")
 	r.HandleFunc("/api/user", app.UpdateUserHandler).Methods("POST")
 	r.HandleFunc("/api/user", app.CreateUserHandler).Methods("PUT")
+	r.HandleFunc("/api/user", app.DeleteUserHandler).Methods("DELETE")
 	// r.Use(loggingMiddleware)
 	// Gorilla Mux's logging handler.
 	loggedRouter := handlers.LoggingHandler(os.Stdout, r)
@@ -157,6 +158,33 @@ func (a App) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(http.StatusOK, updatedUser, w)
+}
+
+// DeleteUserHandler deletes an existing user
+func (a App) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	var user entity.UpdateUserRequest
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	provider, err := a.Container.UserProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting UserProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	err = provider.DeleteUser(user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error deleting User: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, fmt.Sprintf("User %s Deleted", user.Username), w)
 }
 
 // add user example:

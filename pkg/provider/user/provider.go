@@ -8,5 +8,5 @@ type Provider interface {
 	GetAll() ([]entity.User, error)
 	AddUser(entity.User) (entity.User, error)
 	UpdateUser(entity.UpdateUserRequest) (entity.User, error)
-	// DeleteUser(username string)
+	DeleteUser(username entity.UpdateUserRequest) error
 }

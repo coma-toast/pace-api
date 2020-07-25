@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -99,6 +100,22 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 	return updatedUserData, nil
 }
 
+// DeleteUser is to update a user record
+func (d *DatabaseProvider) DeleteUser(user entity.UpdateUserRequest) error {
+	userData, err := d.getByUsername(user.Username)
+	if err != nil {
+		return err
+	}
+
+	err = d.deleteByUserID(userData.ID)
+	if err != nil {
+		return err
+	}
+	rollbar.Info(fmt.Sprintf("Deleted user %s", userData.Username))
+
+	return nil
+}
+
 func (d *DatabaseProvider) addUser(userData entity.User) (entity.User, error) {
 	existingUser, _ := d.GetByUsername(userData.Username)
 	if (entity.User{}) != existingUser {
@@ -148,6 +165,16 @@ func (d *DatabaseProvider) setByUserID(userID string, userData entity.User) erro
 	if err != nil {
 		return fmt.Errorf("Error setting user %s by ID: %s", userID, err)
 	}
+
+	return nil
+}
+
+func (d *DatabaseProvider) deleteByUserID(userID string) error {
+	result, err := d.Database.Collection("users").Doc(userID).Delete(context.TODO())
+	if err != nil {
+		return fmt.Errorf("Error deleting user %s by ID: %s", userID, err)
+	}
+	log.Printf("Deleting user %s: %v", userID, result)
 
 	return nil
 }
