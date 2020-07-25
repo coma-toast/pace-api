@@ -100,6 +100,13 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 }
 
 func (d *DatabaseProvider) addUser(userData entity.User) (entity.User, error) {
+	existingUser, err := d.GetByUsername(userData.Username)
+	if err != nil {
+		return entity.User{}, fmt.Errorf("Error looking for existing user %s by ID: %s", userData.Username, err)
+	}
+	if (entity.User{}) != existingUser {
+		return entity.User{}, fmt.Errorf("Error adding user %s: Username already exists", userData.Username)
+	}
 	newUUID := uuid.New().String()
 	newUserData := entity.User{
 		ID:        newUUID,
