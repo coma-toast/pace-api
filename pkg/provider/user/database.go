@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/coma-toast/pace-api/pkg/entity"
+	helper "github.com/coma-toast/pace-api/pkg/utils"
+	"github.com/google/uuid"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -50,11 +53,11 @@ func (d *DatabaseProvider) getAll() ([]entity.User, error) {
 
 // AddUser is to update a user record
 func (d *DatabaseProvider) AddUser(newUserData entity.User) (entity.User, error) {
-	rollbar.Info(fmt.Sprintf("Adding new user: \n%v", newUserData))
 	userRef, err := d.addUser(newUserData)
 	if err != nil {
 		return entity.User{}, err
 	}
+	rollbar.Info(fmt.Sprintf("Adding new user %s", newUserData.Username))
 	updatedUserData, err := d.getByUserID(userRef.ID)
 	if err != nil {
 		return entity.User{}, err
@@ -96,14 +99,33 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 	return updatedUserData, nil
 }
 
-func (d *DatabaseProvider) addUser(userData entity.User) (*firestore.DocumentRef, error) {
-	userID, timestamp, err := d.Database.Collection("users").Add(context.TODO(), userData)
-	if err != nil {
-		return userID, fmt.Errorf("Error setting user %s by ID: %s", userID.ID, err)
+func (d *DatabaseProvider) addUser(userData entity.User) (entity.User, error) {
+	newUUID := uuid.New().String()
+	newUserData := entity.User{
+		ID:        newUUID,
+		Created:   time.Now().String(),
+		FirstName: userData.FirstName,
+		LastName:  userData.LastName,
+		Role:      userData.Role,
+		Username:  userData.Username,
+		Password:  helper.Hash(userData.Password, newUUID),
+		Email:     userData.Email,
+		Phone:     userData.Phone,
+		TimeZone:  userData.TimeZone,
+		DarkMode:  userData.DarkMode,
 	}
-	rollbar.Info(fmt.Sprintf("User %s added at %s.", userID.ID, timestamp))
+	addUserResult, err := d.Database.Collection("users").Doc(newUUID).Set(context.TODO(), newUserData)
+	if err != nil {
+		return entity.User{}, fmt.Errorf("Error setting user %s by ID: %s", newUserData.Username, err)
+	}
+	rollbar.Info(fmt.Sprintf("User %s added at %s.", newUserData.Username, addUserResult))
 
-	return userID, nil
+	newUser, err := d.getByUserID(newUserData.ID)
+	if err != nil {
+		return entity.User{}, fmt.Errorf("Error getting newly created user %s by ID: %s", newUserData.Username, err)
+	}
+
+	return newUser, nil
 }
 
 func (d *DatabaseProvider) getByUserID(userID string) (entity.User, error) {
@@ -134,7 +156,6 @@ func (d *DatabaseProvider) getByUsername(username string) (entity.User, error) {
 	if err != nil {
 		return entity.User{}, err
 	}
-
 	for _, fbUser := range allMatchingUsers {
 		err = fbUser.DataTo(&user)
 		if err != nil {
