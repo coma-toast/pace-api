@@ -7,5 +7,5 @@ type Provider interface {
 	GetByUsername(username string) (entity.User, error)
 	GetAll() ([]entity.User, error)
 	AddUser(entity.User) (entity.User, error)
-	UpdateUser(entity.UpdateUserRequest) (entity.User, error)
+	UpdateUser(entity.User) (entity.User, error)
 }

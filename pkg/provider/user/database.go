@@ -70,6 +70,8 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 		return entity.User{}, err
 	}
 	rollbar.Info(fmt.Sprintf("Updating userID %s. \nOld Data: %v \nNew Data: %v", newUserData.ID, currentUserData, newUserData))
+	updatedUser := entity.User{}
+
 	err = d.setByUserID(newUserData.ID, newUserData)
 	if err != nil {
 		return entity.User{}, err
@@ -80,6 +82,10 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 	}
 
 	return updatedUserData, nil
+}
+
+func (d *DatabaseProvider) combineUserTypes(user entity.User, updateUser entity.UpdateUserRequest) entity.User {
+
 }
 
 func (d *DatabaseProvider) addUser(userData entity.User) (*firestore.DocumentRef, error) {
@@ -103,7 +109,7 @@ func (d *DatabaseProvider) getByUserID(userID string) (entity.User, error) {
 	return user, nil
 }
 
-func (d *DatabaseProvider) setByUserID(userID string, userData entity.UpdateUserRequest) error {
+func (d *DatabaseProvider) setByUserID(userID string, userData entity.User) error {
 	_, err := d.Database.Collection("users").Doc(userID).Set(context.TODO(), userData)
 	if err != nil {
 		return fmt.Errorf("Error setting user %s by ID: %s", userID, err)
