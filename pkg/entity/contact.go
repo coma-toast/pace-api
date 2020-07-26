@@ -6,8 +6,7 @@ type Contact struct {
 	Created   string
 	FirstName string
 	LastName  string
-	Username  string
-	Password  string
+	Company   string
 	Email     string
 	Phone     string
 	Timezone  string

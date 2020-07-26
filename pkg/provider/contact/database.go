@@ -22,12 +22,12 @@ type DatabaseProvider struct {
 // ErrContactNotFound if no Contacts are found
 var ErrContactNotFound = errors.New("Contact not found")
 
-// // GetByContactname gets a Contact by Contactname
-// func (d *DatabaseProvider) GetByContactname(Contactname string) (entity.Contact, error) {
-// 	return d.getByContactname(Contactname)
+// // GetByID gets a Contact by ID
+// func (d *DatabaseProvider) GetByID(ID string) (entity.Contact, error) {
+// 	return d.getByID(ID)
 // }
 
-// GetAll gets a Contact by Contactname
+// GetAll gets a Contact by ID
 func (d *DatabaseProvider) GetAll() ([]entity.Contact, error) {
 	return d.getAll()
 }
@@ -69,23 +69,20 @@ func (d *DatabaseProvider) AddContact(newContactData entity.Contact) (entity.Con
 
 // UpdateContact is to update a Contact record
 func (d *DatabaseProvider) UpdateContact(newContactData entity.Contact) (entity.Contact, error) {
-	currentContactData, err := d.getByCompanyName(newContactData.Company)
+	currentContactData, err := d.getByContactID(newContactData.ID)
 	if err != nil {
 		return entity.Contact{}, err
 	}
 	rollbar.Info(fmt.Sprintf("Updating ContactID %s. \nOld Data: %v \nNew Data: %v", currentContactData.ID, currentContactData, newContactData))
 	updatedContact := entity.Contact{
-		ID:          currentContactData.ID,
-		Created:     currentContactData.Created,
-		FirstName:   newContactData.FirstName,
-		LastName:    newContactData.LastName,
-		Role:        newContactData.Role,
-		Contactname: newContactData.Contactname,
-		Password:    currentContactData.Password,
-		Email:       newContactData.Email,
-		Phone:       newContactData.Phone,
-		TimeZone:    newContactData.TimeZone,
-		DarkMode:    newContactData.DarkMode,
+		ID:        currentContactData.ID,
+		Created:   currentContactData.Created,
+		FirstName: newContactData.FirstName,
+		LastName:  newContactData.LastName,
+		Company:   newContactData.Company,
+		Email:     newContactData.Email,
+		Phone:     newContactData.Phone,
+		Timezone:  newContactData.Timezone,
 	}
 
 	err = d.setByContactID(currentContactData.ID, updatedContact)
@@ -102,7 +99,7 @@ func (d *DatabaseProvider) UpdateContact(newContactData entity.Contact) (entity.
 
 // DeleteContact is to update a Contact record
 func (d *DatabaseProvider) DeleteContact(Contact entity.Contact) error {
-	ContactData, err := d.getByContactname(Contact.Contactname)
+	ContactData, err := d.getByContactID(Contact.ID)
 	if err != nil {
 		return err
 	}
@@ -111,39 +108,39 @@ func (d *DatabaseProvider) DeleteContact(Contact entity.Contact) error {
 	if err != nil {
 		return err
 	}
-	rollbar.Info(fmt.Sprintf("Deleted Contact %s", ContactData.Contactname))
+	rollbar.Info(fmt.Sprintf("Deleted Contact %s: %s %s", ContactData.ID, ContactData.FirstName, ContactData.LastName))
 
 	return nil
 }
 
 func (d *DatabaseProvider) addContact(ContactData entity.Contact) (entity.Contact, error) {
-	existingContact, _ := d.GetByContactname(ContactData.Contactname)
+	existingContact, _ := d.getByNameAndCompany(ContactData.FirstName, ContactData.LastName, ContactData.Company)
 	if (entity.Contact{}) != existingContact {
-		return entity.Contact{}, fmt.Errorf("Error adding Contact %s: Contactname already exists", ContactData.Contactname)
+		return entity.Contact{}, fmt.Errorf("Error adding Contact %s: ID already exists", ContactData.ID)
 	}
 	newUUID := uuid.New().String()
 	newContactData := entity.Contact{
-		ID:          newUUID,
-		Created:     time.Now().String(),
-		FirstName:   ContactData.FirstName,
-		LastName:    ContactData.LastName,
-		Role:        ContactData.Role,
-		Contactname: ContactData.Contactname,
-		Password:    helper.Hash(ContactData.Password, newUUID),
-		Email:       ContactData.Email,
-		Phone:       ContactData.Phone,
-		TimeZone:    ContactData.TimeZone,
-		DarkMode:    ContactData.DarkMode,
+		ID:        newUUID,
+		Created:   time.Now().String(),
+		FirstName: ContactData.FirstName,
+		LastName:  ContactData.LastName,
+		Role:      ContactData.Role,
+		ID:        ContactData.ID,
+		Password:  helper.Hash(ContactData.Password, newUUID),
+		Email:     ContactData.Email,
+		Phone:     ContactData.Phone,
+		TimeZone:  ContactData.TimeZone,
+		DarkMode:  ContactData.DarkMode,
 	}
 	addContactResult, err := d.Database.Collection("Contacts").Doc(newUUID).Set(context.TODO(), newContactData)
 	if err != nil {
-		return entity.Contact{}, fmt.Errorf("Error setting Contact %s by ID: %s", newContactData.Contactname, err)
+		return entity.Contact{}, fmt.Errorf("Error setting Contact %s by ID: %s", newContactData.ID, err)
 	}
-	rollbar.Info(fmt.Sprintf("Contact %s added at %s.", newContactData.Contactname, addContactResult))
+	rollbar.Info(fmt.Sprintf("Contact %s added at %s.", newContactData.ID, addContactResult))
 
 	newContact, err := d.getByContactID(newContactData.ID)
 	if err != nil {
-		return entity.Contact{}, fmt.Errorf("Error getting newly created Contact %s by ID: %s", newContactData.Contactname, err)
+		return entity.Contact{}, fmt.Errorf("Error getting newly created Contact %s by ID: %s", newContactData.ID, err)
 	}
 
 	return newContact, nil
@@ -158,6 +155,23 @@ func (d *DatabaseProvider) getByContactID(ContactID string) (entity.Contact, err
 	ContactData.DataTo(&Contact)
 
 	return Contact, nil
+}
+
+func (d *DatabaseProvider) getByNameAndCompany(firstName string, lastName string, company string) (entity.Contact, error) {
+	var contact entity.Contact
+	contactSnapshot, err := d.Database.Collection("Contacts").Where("Company", "==", company).Documents(context.TODO()).GetAll()
+	if err != nil {
+		return entity.Contact{}, fmt.Errorf("Error getting contact by name and company: %s", err)
+	}
+
+	for _, companyContact := range contactSnapshot {
+		companyContact.DataTo(&contact)
+		if contact.FirstName == firstName && contact.LastName == lastName {
+			return contact, nil
+		}
+	}
+
+	return entity.Contact{}, ErrContactNotFound
 }
 
 func (d *DatabaseProvider) setByContactID(ContactID string, ContactData entity.Contact) error {
@@ -179,10 +193,10 @@ func (d *DatabaseProvider) deleteByContactID(ContactID string) error {
 	return nil
 }
 
-// func (d *DatabaseProvider) getByContactname(Contactname string) (entity.Contact, error) {
+// func (d *DatabaseProvider) getByID(ID string) (entity.Contact, error) {
 // 	var Contact entity.Contact
 
-// 	Contacts := d.Database.Collection("Contacts").Where("Contactname", "==", Contactname).Documents(context.TODO())
+// 	Contacts := d.Database.Collection("Contacts").Where("ID", "==", ID).Documents(context.TODO())
 // 	allMatchingContacts, err := Contacts.GetAll()
 // 	if err != nil {
 // 		return entity.Contact{}, err
@@ -190,7 +204,7 @@ func (d *DatabaseProvider) deleteByContactID(ContactID string) error {
 // 	for _, fbContact := range allMatchingContacts {
 // 		err = fbContact.DataTo(&Contact)
 // 		if err != nil {
-// 			return entity.Contact{}, fmt.Errorf("ERROR: Contact error - Firestore.DataTo() error %w, for Contact %s", err, Contactname)
+// 			return entity.Contact{}, fmt.Errorf("ERROR: Contact error - Firestore.DataTo() error %w, for Contact %s", err, ID)
 // 		}
 // 		return Contact, nil
 // 		// data = append(data, fbContact.Data())
