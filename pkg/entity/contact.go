@@ -11,17 +11,3 @@ type Contact struct {
 	Phone     string `json:"phone"`
 	Timezone  string `json:"timezone"`
 }
-
-// Company is a contact company
-type Company struct {
-	ID             string
-	PrimaryContact Contact
-	Contacts       []Contact
-	Phone          string
-	Email          string
-	Created        string
-	Address        string
-	City           string
-	State          string
-	Zip            int32
-}

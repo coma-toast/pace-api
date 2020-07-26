@@ -7,6 +7,7 @@ import (
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
 	"github.com/coma-toast/pace-api/pkg/paceconfig"
+	"github.com/coma-toast/pace-api/pkg/provider/company"
 	"github.com/coma-toast/pace-api/pkg/provider/contact"
 	"github.com/coma-toast/pace-api/pkg/provider/user"
 	"google.golang.org/api/option"
@@ -16,6 +17,7 @@ import (
 type Container interface {
 	UserProvider() (user.Provider, error)
 	ContactProvider() (contact.Provider, error)
+	CompanyProvider() (company.Provider, error)
 }
 
 // Production is our production container for our external connections
@@ -24,11 +26,13 @@ type Production struct {
 	// Providers
 	userProvider    *user.DatabaseProvider
 	contactProvider *contact.DatabaseProvider
+	companyProvider *company.DatabaseProvider
 	// Clients
 	firestoreClient *firestore.Client
 	// Mutex Locks
 	userProviderMutex    *sync.Mutex
 	contactProviderMutex *sync.Mutex
+	companyProviderMutex *sync.Mutex
 	firestoreClientMutex *sync.Mutex
 }
 
@@ -66,11 +70,30 @@ func (p Production) ContactProvider() (contact.Provider, error) {
 	return p.contactProvider, nil
 }
 
+// CompanyProvider provides the Company provider
+func (p Production) CompanyProvider() (company.Provider, error) {
+	if p.companyProvider != nil {
+		return p.companyProvider, nil
+	}
+	// TODO: copy Hub contact provider (mutex lock, etc)
+	firestoreConnection, err := p.getFirestoreConnection()
+	if err != nil {
+		return nil, err
+	}
+	p.companyProvider = &company.DatabaseProvider{
+		Database: firestoreConnection,
+	}
+
+	return p.companyProvider, nil
+}
+
 // NewProduction builds a container with all of the config
 func NewProduction(paceconfig *paceconfig.Config) Container {
 	return &Production{
 		config:               paceconfig,
 		userProviderMutex:    &sync.Mutex{},
+		contactProviderMutex: &sync.Mutex{},
+		companyProviderMutex: &sync.Mutex{},
 		firestoreClientMutex: &sync.Mutex{},
 	}
 }
