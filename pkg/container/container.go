@@ -15,6 +15,7 @@ import (
 // Container exposes data providers
 type Container interface {
 	UserProvider() (user.Provider, error)
+	ContactProvider() (contact.Provider, error)
 }
 
 // Production is our production container for our external connections
@@ -27,6 +28,7 @@ type Production struct {
 	firestoreClient *firestore.Client
 	// Mutex Locks
 	userProviderMutex    *sync.Mutex
+	contactProviderMutex *sync.Mutex
 	firestoreClientMutex *sync.Mutex
 }
 
@@ -45,6 +47,23 @@ func (p Production) UserProvider() (user.Provider, error) {
 	}
 
 	return p.userProvider, nil
+}
+
+// ContactProvider provides the contact provider
+func (p Production) ContactProvider() (contact.Provider, error) {
+	if p.contactProvider != nil {
+		return p.contactProvider, nil
+	}
+	// TODO: copy Hub contact provider (mutex lock, etc)
+	firestoreConnection, err := p.getFirestoreConnection()
+	if err != nil {
+		return nil, err
+	}
+	p.contactProvider = &contact.DatabaseProvider{
+		Database: firestoreConnection,
+	}
+
+	return p.contactProvider, nil
 }
 
 // NewProduction builds a container with all of the config

@@ -6,7 +6,7 @@ import "github.com/coma-toast/pace-api/pkg/entity"
 type Provider interface {
 	// GetBy(contactname string) (entity.Contact, error)
 	GetAll() ([]entity.Contact, error)
-	Addcontact(entity.Contact) (entity.Contact, error)
-	Updatecontact(entity.Contact) (entity.Contact, error)
-	Deletecontact(contactname entity.Contact) error
+	AddContact(entity.Contact) (entity.Contact, error)
+	UpdateContact(entity.Contact) (entity.Contact, error)
+	DeleteContact(contactname entity.Contact) error
 }

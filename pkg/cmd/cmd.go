@@ -60,10 +60,10 @@ func Run() {
 	r.HandleFunc("/api/user", app.CreateUserHandler).Methods("PUT")
 	r.HandleFunc("/api/user", app.DeleteUserHandler).Methods("DELETE")
 	// TODO:  r.HandleFunc("/api/password", app.PasswordHandler).Methods("POST")
-	r.HandleFunc("/api/Contact", app.GetContactHandler).Methods("GET")
-	r.HandleFunc("/api/Contact", app.UpdateContactHandler).Methods("POST")
-	r.HandleFunc("/api/Contact", app.CreateContactHandler).Methods("PUT")
-	r.HandleFunc("/api/Contact", app.DeleteContactHandler).Methods("DELETE")
+	r.HandleFunc("/api/contact", app.GetContactHandler).Methods("GET")
+	r.HandleFunc("/api/contact", app.UpdateContactHandler).Methods("POST")
+	r.HandleFunc("/api/contact", app.CreateContactHandler).Methods("PUT")
+	r.HandleFunc("/api/contact", app.DeleteContactHandler).Methods("DELETE")
 
 	// r.Use(loggingMiddleware)
 	// Gorilla Mux's logging handler.
@@ -84,33 +84,99 @@ func PingHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(http.StatusOK, data, w)
 }
 
+// GetContactHandler handles api calls for contacts
 func (a App) GetContactHandler(w http.ResponseWriter, r *http.Request) {
 	provider, err := a.Container.ContactProvider()
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err, r))
+		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err, w)
 	}
+	allContacts, err := provider.GetAll()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting All Contacts: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err, w)
+		return
+	}
+	jsonResponse(http.StatusOK, allContacts, w)
 }
+
+// UpdateContactHandler handles api calls for contacts
 func (a App) UpdateContactHandler(w http.ResponseWriter, r *http.Request) {
+	var contact entity.Contact
 	provider, err := a.Container.ContactProvider()
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err, r))
+		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err, w)
 	}
+
+	err = json.NewDecoder(r.Body).Decode(&contact)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	updatedUser, err := provider.UpdateContact(contact)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error setting ContactProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, updatedUser, w)
 }
+
+// CreateContactHandler handles api calls for contacts
 func (a App) CreateContactHandler(w http.ResponseWriter, r *http.Request) {
+	var contact entity.Contact
 	provider, err := a.Container.ContactProvider()
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err, r))
+		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err, w)
 	}
+
+	err = json.NewDecoder(r.Body).Decode(&contact)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a Contact: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	updatedContact, err := provider.AddContact(contact)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error setting ContactProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, updatedContact, w)
 }
+
+// DeleteContactHandler handles api calls for contacts
 func (a App) DeleteContactHandler(w http.ResponseWriter, r *http.Request) {
+	var contact entity.Contact
+	err := json.NewDecoder(r.Body).Decode(&contact)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a contact: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
 	provider, err := a.Container.ContactProvider()
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error getting ContactProvider: %s", err, r))
-		jsonResponse(http.StatusInternalServerError, err, w)
+		rollbar.Warning(fmt.Sprintf("Error getting contactProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
 	}
+
+	err = provider.DeleteContact(contact)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error deleting contact: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, fmt.Sprintf("contact %s %s  Deleted", contact.FirstName, contact.LastName), w)
 }
 
 // GetUserHandler handles api calls for User

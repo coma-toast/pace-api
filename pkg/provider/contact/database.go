@@ -9,7 +9,6 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/coma-toast/pace-api/pkg/entity"
-	helper "github.com/coma-toast/pace-api/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/rollbar/rollbar-go"
 )
@@ -70,6 +69,7 @@ func (d *DatabaseProvider) AddContact(newContactData entity.Contact) (entity.Con
 // UpdateContact is to update a Contact record
 func (d *DatabaseProvider) UpdateContact(newContactData entity.Contact) (entity.Contact, error) {
 	currentContactData, err := d.getByContactID(newContactData.ID)
+	// * dev code currentContactData, err := d.getByNameAndCompany(newContactData.FirstName, newContactData.LastName, newContactData.Company)
 	if err != nil {
 		return entity.Contact{}, err
 	}
@@ -124,15 +124,12 @@ func (d *DatabaseProvider) addContact(ContactData entity.Contact) (entity.Contac
 		Created:   time.Now().String(),
 		FirstName: ContactData.FirstName,
 		LastName:  ContactData.LastName,
-		Role:      ContactData.Role,
-		ID:        ContactData.ID,
-		Password:  helper.Hash(ContactData.Password, newUUID),
+		Company:   ContactData.Company,
 		Email:     ContactData.Email,
 		Phone:     ContactData.Phone,
-		TimeZone:  ContactData.TimeZone,
-		DarkMode:  ContactData.DarkMode,
+		Timezone:  ContactData.Timezone,
 	}
-	addContactResult, err := d.Database.Collection("Contacts").Doc(newUUID).Set(context.TODO(), newContactData)
+	addContactResult, err := d.Database.Collection("contacts").Doc(newUUID).Set(context.TODO(), newContactData)
 	if err != nil {
 		return entity.Contact{}, fmt.Errorf("Error setting Contact %s by ID: %s", newContactData.ID, err)
 	}
@@ -146,20 +143,21 @@ func (d *DatabaseProvider) addContact(ContactData entity.Contact) (entity.Contac
 	return newContact, nil
 }
 
-func (d *DatabaseProvider) getByContactID(ContactID string) (entity.Contact, error) {
-	var Contact entity.Contact
-	ContactData, err := d.Database.Collection("Contacts").Doc(ContactID).Get(context.TODO())
-	if err != nil {
-		return entity.Contact{}, fmt.Errorf("Error getting Contact %s by ID: %s", ContactID, err)
-	}
-	ContactData.DataTo(&Contact)
+func (d *DatabaseProvider) getByContactID(contactID string) (entity.Contact, error) {
+	var contact entity.Contact
 
-	return Contact, nil
+	contactData, err := d.Database.Collection("contacts").Doc(contactID).Get(context.TODO())
+	if err != nil {
+		return entity.Contact{}, fmt.Errorf("Error getting Contact %s by ID: %s", contactID, err)
+	}
+	contactData.DataTo(&contact)
+
+	return contact, nil
 }
 
 func (d *DatabaseProvider) getByNameAndCompany(firstName string, lastName string, company string) (entity.Contact, error) {
 	var contact entity.Contact
-	contactSnapshot, err := d.Database.Collection("Contacts").Where("Company", "==", company).Documents(context.TODO()).GetAll()
+	contactSnapshot, err := d.Database.Collection("contacts").Where("Company", "==", company).Documents(context.TODO()).GetAll()
 	if err != nil {
 		return entity.Contact{}, fmt.Errorf("Error getting contact by name and company: %s", err)
 	}
@@ -175,7 +173,7 @@ func (d *DatabaseProvider) getByNameAndCompany(firstName string, lastName string
 }
 
 func (d *DatabaseProvider) setByContactID(ContactID string, ContactData entity.Contact) error {
-	_, err := d.Database.Collection("Contacts").Doc(ContactID).Set(context.TODO(), ContactData)
+	_, err := d.Database.Collection("contacts").Doc(ContactID).Set(context.TODO(), ContactData)
 	if err != nil {
 		return fmt.Errorf("Error setting Contact %s by ID: %s", ContactID, err)
 	}
@@ -184,7 +182,7 @@ func (d *DatabaseProvider) setByContactID(ContactID string, ContactData entity.C
 }
 
 func (d *DatabaseProvider) deleteByContactID(ContactID string) error {
-	result, err := d.Database.Collection("Contacts").Doc(ContactID).Delete(context.TODO())
+	result, err := d.Database.Collection("contacts").Doc(ContactID).Delete(context.TODO())
 	if err != nil {
 		return fmt.Errorf("Error deleting Contact %s by ID: %s", ContactID, err)
 	}
@@ -196,7 +194,7 @@ func (d *DatabaseProvider) deleteByContactID(ContactID string) error {
 // func (d *DatabaseProvider) getByID(ID string) (entity.Contact, error) {
 // 	var Contact entity.Contact
 
-// 	Contacts := d.Database.Collection("Contacts").Where("ID", "==", ID).Documents(context.TODO())
+// 	Contacts := d.Database.Collection("contacts").Where("ID", "==", ID).Documents(context.TODO())
 // 	allMatchingContacts, err := Contacts.GetAll()
 // 	if err != nil {
 // 		return entity.Contact{}, err
