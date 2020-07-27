@@ -98,36 +98,36 @@ func (d *DatabaseProvider) UpdateContact(newContactData entity.Contact) (entity.
 }
 
 // DeleteContact is to update a Contact record
-func (d *DatabaseProvider) DeleteContact(Contact entity.Contact) error {
-	ContactData, err := d.getByContactID(Contact.ID)
+func (d *DatabaseProvider) DeleteContact(contact entity.Contact) error {
+	contactData, err := d.getByContactID(contact.ID)
 	if err != nil {
 		return err
 	}
 
-	err = d.deleteByContactID(ContactData.ID)
+	err = d.deleteByContactID(contactData.ID)
 	if err != nil {
 		return err
 	}
-	rollbar.Info(fmt.Sprintf("Deleted Contact %s: %s %s", ContactData.ID, ContactData.FirstName, ContactData.LastName))
+	rollbar.Info(fmt.Sprintf("Deleted Contact %s: %s %s", contactData.ID, contactData.FirstName, contactData.LastName))
 
 	return nil
 }
 
-func (d *DatabaseProvider) addContact(ContactData entity.Contact) (entity.Contact, error) {
-	existingContact, _ := d.getByNameAndCompany(ContactData.FirstName, ContactData.LastName, ContactData.Company)
+func (d *DatabaseProvider) addContact(contactData entity.Contact) (entity.Contact, error) {
+	existingContact, _ := d.getByNameAndCompany(contactData.FirstName, contactData.LastName, contactData.Company)
 	if (entity.Contact{}) != existingContact {
-		return entity.Contact{}, fmt.Errorf("Error adding Contact %s: ID already exists", ContactData.ID)
+		return entity.Contact{}, fmt.Errorf("Error adding Contact %s: ID already exists", contactData.ID)
 	}
 	newUUID := uuid.New().String()
 	newContactData := entity.Contact{
 		ID:        newUUID,
 		Created:   time.Now().String(),
-		FirstName: ContactData.FirstName,
-		LastName:  ContactData.LastName,
-		Company:   ContactData.Company,
-		Email:     ContactData.Email,
-		Phone:     ContactData.Phone,
-		Timezone:  ContactData.Timezone,
+		FirstName: contactData.FirstName,
+		LastName:  contactData.LastName,
+		Company:   contactData.Company,
+		Email:     contactData.Email,
+		Phone:     contactData.Phone,
+		Timezone:  contactData.Timezone,
 	}
 	addContactResult, err := d.Database.Collection("contacts").Doc(newUUID).Set(context.TODO(), newContactData)
 	if err != nil {

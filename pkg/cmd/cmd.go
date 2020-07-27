@@ -64,6 +64,10 @@ func Run() {
 	r.HandleFunc("/api/contact", app.UpdateContactHandler).Methods("POST")
 	r.HandleFunc("/api/contact", app.CreateContactHandler).Methods("PUT")
 	r.HandleFunc("/api/contact", app.DeleteContactHandler).Methods("DELETE")
+	r.HandleFunc("/api/company", app.GetCompanyHandler).Methods("GET")
+	r.HandleFunc("/api/company", app.UpdateCompanyHandler).Methods("POST")
+	r.HandleFunc("/api/company", app.CreateCompanyHandler).Methods("PUT")
+	r.HandleFunc("/api/company", app.DeleteCompanyHandler).Methods("DELETE")
 
 	// r.Use(loggingMiddleware)
 	// Gorilla Mux's logging handler.
@@ -137,7 +141,7 @@ func (a App) CreateContactHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewDecoder(r.Body).Decode(&contact)
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a Contact: %s", err), r)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when creating a Contact: %s", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -177,6 +181,104 @@ func (a App) DeleteContactHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(http.StatusOK, fmt.Sprintf("contact %s %s  Deleted", contact.FirstName, contact.LastName), w)
+}
+
+//GetCompanyHandler handles api calls for Company
+func (a App) GetCompanyHandler(w http.ResponseWriter, r *http.Request) {
+	provider, err := a.Container.CompanyProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting CompanyProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err, w)
+		return
+	}
+	allCompanies, err := provider.GetAll()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting All Companies: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err, w)
+		return
+	}
+	jsonResponse(http.StatusOK, allCompanies, w)
+}
+
+//UpdateCompanyHandler handles api calls for Company
+func (a App) UpdateCompanyHandler(w http.ResponseWriter, r *http.Request) {
+	var company entity.Company
+	provider, err := a.Container.CompanyProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting CompanyProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err, w)
+		return
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&company)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a Company: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	updatedUser, err := provider.UpdateCompany(company)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error setting CompanyProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, updatedUser, w)
+}
+
+//CreateCompanyHandler handles api calls for Company
+func (a App) CreateCompanyHandler(w http.ResponseWriter, r *http.Request) {
+	var company entity.Company
+	provider, err := a.Container.CompanyProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting CompanyProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err, w)
+		return
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&company)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when creating a Company: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	updatedUser, err := provider.AddCompany(company)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error setting CompanyProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, updatedUser, w)
+}
+
+//DeleteCompanyHandler handles api calls for Company
+func (a App) DeleteCompanyHandler(w http.ResponseWriter, r *http.Request) {
+	var company entity.Company
+	provider, err := a.Container.CompanyProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting CompanyProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err, w)
+		return
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&company)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when deleting a Company: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	err = provider.DeleteCompany(company)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error deleting company: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, fmt.Sprintf("company %s Deleted", company.Name), w)
 }
 
 // GetUserHandler handles api calls for User

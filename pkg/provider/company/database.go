@@ -31,24 +31,9 @@ func (d *DatabaseProvider) GetAll() ([]entity.Company, error) {
 	return d.getAll()
 }
 
-func (d *DatabaseProvider) getAll() ([]entity.Company, error) {
-	var company []entity.Company
-
-	allCompanyData, err := d.Database.Collection("company").Documents(context.TODO()).GetAll()
-	if err != nil {
-		return []entity.Company{}, err
-	}
-
-	for _, CompanyData := range allCompanyData {
-		var Company entity.Company
-		err := CompanyData.DataTo(&Company)
-		if err != nil {
-			return []entity.Company{}, fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
-		}
-		company = append(company, Company)
-	}
-
-	return company, nil
+// GetByName gets a Company by name
+func (d *DatabaseProvider) GetByName(companyName string) (entity.Company, error) {
+	return d.getByName(companyName)
 }
 
 // AddCompany is to update a Company record
@@ -101,39 +86,34 @@ func (d *DatabaseProvider) UpdateCompany(newCompanyData entity.Company) (entity.
 }
 
 // DeleteCompany is to update a Company record
-func (d *DatabaseProvider) DeleteCompany(Company entity.Company) error {
-	CompanyData, err := d.getByCompanyID(Company.ID)
+func (d *DatabaseProvider) DeleteCompany(company entity.Company) error {
+	err := d.deleteByCompanyID(company.ID)
 	if err != nil {
 		return err
 	}
-
-	err = d.deleteByCompanyID(CompanyData.ID)
-	if err != nil {
-		return err
-	}
-	rollbar.Info(fmt.Sprintf("Deleted Company %s: %s %s", CompanyData.ID, CompanyData.Name))
+	rollbar.Info(fmt.Sprintf("Deleted Company %s: %s", company.ID, company.Name))
 
 	return nil
 }
 
-func (d *DatabaseProvider) addCompany(CompanyData entity.Company) (entity.Company, error) {
-	existingCompany, _ := d.getByName(CompanyData.Name)
-	if (entity.Company{}) != existingCompany {
-		return entity.Company{}, fmt.Errorf("Error adding Company %s: ID already exists", CompanyData.ID)
+func (d *DatabaseProvider) addCompany(companyData entity.Company) (entity.Company, error) {
+	existingCompany, _ := d.getByName(companyData.Name)
+	if (existingCompany.ID) != "" {
+		return entity.Company{}, fmt.Errorf("Error adding Company %s: ID already exists", companyData.ID)
 	}
 	newUUID := uuid.New().String()
 	newCompanyData := entity.Company{
 		ID:             newUUID,
 		Created:        time.Now().String(),
-		Name:           CompanyData.Name,
-		PrimaryContact: CompanyData.PrimaryContact,
-		Contacts:       CompanyData.Contacts,
-		Phone:          CompanyData.Phone,
-		Email:          CompanyData.Email,
-		Address:        CompanyData.Address,
-		City:           CompanyData.City,
-		State:          CompanyData.State,
-		Zip:            CompanyData.Zip,
+		Name:           companyData.Name,
+		PrimaryContact: companyData.PrimaryContact,
+		Contacts:       companyData.Contacts,
+		Phone:          companyData.Phone,
+		Email:          companyData.Email,
+		Address:        companyData.Address,
+		City:           companyData.City,
+		State:          companyData.State,
+		Zip:            companyData.Zip,
 	}
 	addCompanyResult, err := d.Database.Collection("company").Doc(newUUID).Set(context.TODO(), newCompanyData)
 	if err != nil {
@@ -147,6 +127,26 @@ func (d *DatabaseProvider) addCompany(CompanyData entity.Company) (entity.Compan
 	}
 
 	return newCompany, nil
+}
+
+func (d *DatabaseProvider) getAll() ([]entity.Company, error) {
+	var company []entity.Company
+
+	allCompanyData, err := d.Database.Collection("company").Documents(context.TODO()).GetAll()
+	if err != nil {
+		return []entity.Company{}, err
+	}
+
+	for _, CompanyData := range allCompanyData {
+		var Company entity.Company
+		err := CompanyData.DataTo(&Company)
+		if err != nil {
+			return []entity.Company{}, fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
+		}
+		company = append(company, Company)
+	}
+
+	return company, nil
 }
 
 func (d *DatabaseProvider) getByCompanyID(companyID string) (entity.Company, error) {
@@ -176,21 +176,26 @@ func (d *DatabaseProvider) getByName(name string) (entity.Company, error) {
 	return entity.Company{}, ErrCompanyNotFound
 }
 
-func (d *DatabaseProvider) setByCompanyID(CompanyID string, CompanyData entity.Company) error {
-	_, err := d.Database.Collection("company").Doc(CompanyID).Set(context.TODO(), CompanyData)
+func (d *DatabaseProvider) setByCompanyID(companyID string, CompanyData entity.Company) error {
+	_, err := d.Database.Collection("company").Doc(companyID).Set(context.TODO(), CompanyData)
 	if err != nil {
-		return fmt.Errorf("Error setting Company %s by ID: %s", CompanyID, err)
+		return fmt.Errorf("Error setting Company %s by ID: %s", companyID, err)
 	}
 
 	return nil
 }
 
-func (d *DatabaseProvider) deleteByCompanyID(CompanyID string) error {
-	result, err := d.Database.Collection("company").Doc(CompanyID).Delete(context.TODO())
+func (d *DatabaseProvider) deleteByCompanyID(companyID string) error {
+	currentCompanyData, err := d.getByCompanyID(companyID)
 	if err != nil {
-		return fmt.Errorf("Error deleting Company %s by ID: %s", CompanyID, err)
+		return ErrCompanyNotFound
 	}
-	log.Printf("Deleting Company %s: %v", CompanyID, result)
+
+	result, err := d.Database.Collection("company").Doc(companyID).Delete(context.TODO())
+	if err != nil {
+		return fmt.Errorf("Error deleting Company %s (%s) by ID: %s", currentCompanyData.Name, companyID, err)
+	}
+	log.Printf("Deleting Company %s (%s): %v", currentCompanyData.Name, companyID, result)
 
 	return nil
 }
