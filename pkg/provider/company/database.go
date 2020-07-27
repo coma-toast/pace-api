@@ -57,7 +57,7 @@ func (d *DatabaseProvider) AddCompany(newCompanyData entity.Company) (entity.Com
 	if err != nil {
 		return entity.Company{}, err
 	}
-	rollbar.Info(fmt.Sprintf("Adding new Company %s %s", newCompanyData.FirstName, newCompanyData.LastName))
+	rollbar.Info(fmt.Sprintf("Adding new Company %s", newCompanyData.Name))
 	updatedCompanyData, err := d.getByCompanyID(companyRef.ID)
 	if err != nil {
 		return entity.Company{}, err
@@ -69,20 +69,23 @@ func (d *DatabaseProvider) AddCompany(newCompanyData entity.Company) (entity.Com
 // UpdateCompany is to update a Company record
 func (d *DatabaseProvider) UpdateCompany(newCompanyData entity.Company) (entity.Company, error) {
 	currentCompanyData, err := d.getByCompanyID(newCompanyData.ID)
-	// * dev code currentCompanyData, err := d.getByNameAndCompany(newCompanyData.FirstName, newCompanyData.LastName, newCompanyData.Company)
+	// * dev code currentCompanyData, err := d.getByName(newCompanyData.Name, n, n)
 	if err != nil {
 		return entity.Company{}, err
 	}
 	rollbar.Info(fmt.Sprintf("Updating CompanyID %s. \nOld Data: %v \nNew Data: %v", currentCompanyData.ID, currentCompanyData, newCompanyData))
 	updatedCompany := entity.Company{
-		ID:        currentCompanyData.ID,
-		Created:   currentCompanyData.Created,
-		FirstName: newCompanyData.FirstName,
-		LastName:  newCompanyData.LastName,
-		Company:   newCompanyData.Company,
-		Email:     newCompanyData.Email,
-		Phone:     newCompanyData.Phone,
-		Timezone:  newCompanyData.Timezone,
+		ID:             currentCompanyData.ID,
+		Name:           newCompanyData.Name,
+		PrimaryContact: newCompanyData.PrimaryContact,
+		Contacts:       newCompanyData.Contacts,
+		Phone:          newCompanyData.Phone,
+		Email:          newCompanyData.Email,
+		Created:        currentCompanyData.Created,
+		Address:        newCompanyData.Address,
+		City:           newCompanyData.City,
+		State:          newCompanyData.State,
+		Zip:            newCompanyData.Zip,
 	}
 
 	err = d.setByCompanyID(currentCompanyData.ID, updatedCompany)
@@ -108,26 +111,29 @@ func (d *DatabaseProvider) DeleteCompany(Company entity.Company) error {
 	if err != nil {
 		return err
 	}
-	rollbar.Info(fmt.Sprintf("Deleted Company %s: %s %s", CompanyData.ID, CompanyData.FirstName, CompanyData.LastName))
+	rollbar.Info(fmt.Sprintf("Deleted Company %s: %s %s", CompanyData.ID, CompanyData.Name))
 
 	return nil
 }
 
 func (d *DatabaseProvider) addCompany(CompanyData entity.Company) (entity.Company, error) {
-	existingCompany, _ := d.getByNameAndCompany(CompanyData.FirstName, CompanyData.LastName, CompanyData.Company)
+	existingCompany, _ := d.getByName(CompanyData.Name)
 	if (entity.Company{}) != existingCompany {
 		return entity.Company{}, fmt.Errorf("Error adding Company %s: ID already exists", CompanyData.ID)
 	}
 	newUUID := uuid.New().String()
 	newCompanyData := entity.Company{
-		ID:        newUUID,
-		Created:   time.Now().String(),
-		FirstName: CompanyData.FirstName,
-		LastName:  CompanyData.LastName,
-		Company:   CompanyData.Company,
-		Email:     CompanyData.Email,
-		Phone:     CompanyData.Phone,
-		Timezone:  CompanyData.Timezone,
+		ID:             newUUID,
+		Created:        time.Now().String(),
+		Name:           CompanyData.Name,
+		PrimaryContact: CompanyData.PrimaryContact,
+		Contacts:       CompanyData.Contacts,
+		Phone:          CompanyData.Phone,
+		Email:          CompanyData.Email,
+		Address:        CompanyData.Address,
+		City:           CompanyData.City,
+		State:          CompanyData.State,
+		Zip:            CompanyData.Zip,
 	}
 	addCompanyResult, err := d.Database.Collection("company").Doc(newUUID).Set(context.TODO(), newCompanyData)
 	if err != nil {
@@ -155,18 +161,16 @@ func (d *DatabaseProvider) getByCompanyID(companyID string) (entity.Company, err
 	return company, nil
 }
 
-func (d *DatabaseProvider) getByNameAndCompany(firstName string, lastName string, company string) (entity.Company, error) {
+func (d *DatabaseProvider) getByName(name string) (entity.Company, error) {
 	var company entity.Company
-	companynapshot, err := d.Database.Collection("company").Where("Company", "==", company).Documents(context.TODO()).GetAll()
+	companySnapshot, err := d.Database.Collection("company").Where("Company", "==", company).Documents(context.TODO()).GetAll()
 	if err != nil {
 		return entity.Company{}, fmt.Errorf("Error getting company by name and company: %s", err)
 	}
 
-	for _, companyCompany := range companynapshot {
+	for _, companyCompany := range companySnapshot {
 		companyCompany.DataTo(&company)
-		if company.FirstName == firstName && company.LastName == lastName {
-			return company, nil
-		}
+		return company, nil
 	}
 
 	return entity.Company{}, ErrCompanyNotFound

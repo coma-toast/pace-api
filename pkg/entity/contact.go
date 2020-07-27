@@ -10,4 +10,5 @@ type Contact struct {
 	Email     string `json:"email"`
 	Phone     string `json:"phone"`
 	Timezone  string `json:"timezone"`
+	Instance  string `json:"instance"`
 }
