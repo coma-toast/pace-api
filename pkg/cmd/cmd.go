@@ -68,6 +68,10 @@ func Run() {
 	r.HandleFunc("/api/company", app.UpdateCompanyHandler).Methods("POST")
 	r.HandleFunc("/api/company", app.CreateCompanyHandler).Methods("PUT")
 	r.HandleFunc("/api/company", app.DeleteCompanyHandler).Methods("DELETE")
+	r.HandleFunc("/api/project", app.GetProjectHandler).Methods("GET")
+	r.HandleFunc("/api/project", app.UpdateProjectHandler).Methods("POST")
+	r.HandleFunc("/api/project", app.CreateProjectHandler).Methods("PUT")
+	r.HandleFunc("/api/project", app.DeleteProjectHandler).Methods("DELETE")
 
 	// r.Use(loggingMiddleware)
 	// Gorilla Mux's logging handler.
@@ -279,6 +283,115 @@ func (a App) DeleteCompanyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(http.StatusOK, fmt.Sprintf("company %s Deleted", company.Name), w)
+}
+
+// GetProjectHandler handles api calls for User
+func (a App) GetProjectHandler(w http.ResponseWriter, r *http.Request) {
+	projectName := r.URL.Query().Get("name")
+	provider, err := a.Container.ProjectProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting ProjectProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err, w)
+		return
+	}
+	if projectName == "" {
+		allProjects, err := provider.GetAll()
+		if err != nil {
+			rollbar.Warning(fmt.Sprintf("Error getting All Projects: %s", err), r)
+			jsonResponse(http.StatusInternalServerError, err, w)
+			return
+		}
+		jsonResponse(http.StatusOK, allProjects, w)
+	} else {
+		user, err := provider.GetByProjectname(projectName)
+		if err != nil {
+			rollbar.Warning(fmt.Sprintf("Error getting Project: %s", err), r)
+			jsonResponse(http.StatusInternalServerError, err, w)
+			return
+		}
+		jsonResponse(http.StatusOK, user, w)
+	}
+}
+
+// UpdateProjectHandler handles api calls for Project
+func (a App) UpdateProjectHandler(w http.ResponseWriter, r *http.Request) {
+	var user entity.UpdateProjectRequest
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a Project: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	provider, err := a.Container.ProjectProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting ProjectProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	updatedProject, err := provider.UpdateProject(user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error setting ProjectProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, updatedProject, w)
+}
+
+// CreateProjectHandler adds a new user
+func (a App) CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
+	var user entity.Project
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a Project: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	provider, err := a.Container.ProjectProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting ProjectProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	updatedProject, err := provider.AddProject(user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error setting ProjectProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, updatedProject, w)
+}
+
+// DeleteProjectHandler deletes an existing user
+func (a App) DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
+	var user entity.UpdateProjectRequest
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a Project: %s", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	provider, err := a.Container.ProjectProvider()
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error getting ProjectProvider: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	err = provider.DeleteProject(user)
+	if err != nil {
+		rollbar.Warning(fmt.Sprintf("Error deleting Project: %s", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+
+	jsonResponse(http.StatusOK, fmt.Sprintf("Project %s Deleted", user.Projectname), w)
 }
 
 // GetUserHandler handles api calls for User

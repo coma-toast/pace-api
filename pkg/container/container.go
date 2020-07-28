@@ -9,6 +9,7 @@ import (
 	"github.com/coma-toast/pace-api/pkg/paceconfig"
 	"github.com/coma-toast/pace-api/pkg/provider/company"
 	"github.com/coma-toast/pace-api/pkg/provider/contact"
+	"github.com/coma-toast/pace-api/pkg/provider/project"
 	"github.com/coma-toast/pace-api/pkg/provider/user"
 	"google.golang.org/api/option"
 )
@@ -18,6 +19,7 @@ type Container interface {
 	UserProvider() (user.Provider, error)
 	ContactProvider() (contact.Provider, error)
 	CompanyProvider() (company.Provider, error)
+	ProjectProvider() (project.Provider, error)
 }
 
 // Production is our production container for our external connections
@@ -27,12 +29,14 @@ type Production struct {
 	userProvider    *user.DatabaseProvider
 	contactProvider *contact.DatabaseProvider
 	companyProvider *company.DatabaseProvider
+	projectProvider *project.DatabaseProvider
 	// Clients
 	firestoreClient *firestore.Client
 	// Mutex Locks
 	userProviderMutex    *sync.Mutex
 	contactProviderMutex *sync.Mutex
 	companyProviderMutex *sync.Mutex
+	projectProviderMutex *sync.Mutex
 	firestoreClientMutex *sync.Mutex
 }
 
@@ -87,6 +91,23 @@ func (p Production) CompanyProvider() (company.Provider, error) {
 	return p.companyProvider, nil
 }
 
+// ProjectProvider provides the Company provider
+func (p Production) ProjectProvider() (project.Provider, error) {
+	if p.projectProvider != nil {
+		return p.projectProvider, nil
+	}
+	// TODO: copy Hub contact provider (mutex lock, etc)
+	firestoreConnection, err := p.getFirestoreConnection()
+	if err != nil {
+		return nil, err
+	}
+	p.projectProvider = &project.DatabaseProvider{
+		Database: firestoreConnection,
+	}
+
+	return p.projectProvider, nil
+}
+
 // NewProduction builds a container with all of the config
 func NewProduction(paceconfig *paceconfig.Config) Container {
 	return &Production{
@@ -94,6 +115,7 @@ func NewProduction(paceconfig *paceconfig.Config) Container {
 		userProviderMutex:    &sync.Mutex{},
 		contactProviderMutex: &sync.Mutex{},
 		companyProviderMutex: &sync.Mutex{},
+		projectProviderMutex: &sync.Mutex{},
 		firestoreClientMutex: &sync.Mutex{},
 	}
 }
