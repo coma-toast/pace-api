@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"sync"
 )
 
@@ -49,3 +51,10 @@ var locker sync.Mutex
 // 	}
 // 	return sectorArray, err
 // }
+
+// Hash a string with salt
+func Hash(source string, salt string) string {
+	hash := sha256.Sum256([]byte(source + salt))
+
+	return hex.EncodeToString(hash[:])
+}
