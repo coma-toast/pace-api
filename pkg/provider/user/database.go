@@ -9,6 +9,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/coma-toast/pace-api/pkg/entity"
+	"github.com/coma-toast/pace-api/pkg/provider/firestoredb"
 	helper "github.com/coma-toast/pace-api/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/rollbar/rollbar-go"
@@ -35,7 +36,8 @@ func (d *DatabaseProvider) GetAll() ([]entity.User, error) {
 func (d *DatabaseProvider) getAll() ([]entity.User, error) {
 	var users []entity.User
 
-	allUserData, err := d.Database.Collection("users").Documents(context.TODO()).GetAll()
+	allUserData, err := firestoredb.GetAll("users")
+	// allUserData, err := d.Database.Collection("users").Documents(context.TODO()).GetAll()
 	if err != nil {
 		return []entity.User{}, err
 	}
