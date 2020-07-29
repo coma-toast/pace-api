@@ -8,7 +8,7 @@ import (
 type Provider interface {
 	// GetBy(contactname string) (entity.Contact, error)
 	GetAll(collection string) ([]*firestore.DocumentSnapshot, error)
-	// AddItem(entity.Contact) (entity.Contact, error)
+	// AddItem(??) (*[]firestore.DocumentSnapshot, error)
 	// UpdateItem(entity.Contact) (entity.Contact, error)
 	// DeleteItem(contactname entity.Contact) error
 }

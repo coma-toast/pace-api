@@ -9,6 +9,7 @@ import (
 	"github.com/coma-toast/pace-api/pkg/paceconfig"
 	"github.com/coma-toast/pace-api/pkg/provider/company"
 	"github.com/coma-toast/pace-api/pkg/provider/contact"
+	"github.com/coma-toast/pace-api/pkg/provider/firestoredb"
 	"github.com/coma-toast/pace-api/pkg/provider/project"
 	"github.com/coma-toast/pace-api/pkg/provider/user"
 	"google.golang.org/api/option"
@@ -51,7 +52,10 @@ func (p Production) UserProvider() (user.Provider, error) {
 		return nil, err
 	}
 	p.userProvider = &user.DatabaseProvider{
-		Database: firestoreConnection,
+		SharedProvider: &firestoredb.DatabaseProvider{
+			Database:   firestoreConnection,
+			Collection: "users",
+		},
 	}
 
 	return p.userProvider, nil

@@ -3,81 +3,98 @@ package firestoredb
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"cloud.google.com/go/firestore"
 )
 
 // DatabaseProvider is a firestore.Provider the uses a database
 type DatabaseProvider struct {
-	Database *firestore.Client
+	Database   *firestore.Client
+	Collection string
 }
 
 // ErrFirestoreNotFound if no Firestores are found
 var ErrFirestoreNotFound = errors.New("Firestore Item not found")
 
-// // GetByID gets a Firestore by ID
-// func (d *DatabaseProvider) GetByID(ID string) (entity.Firestore, error) {
-// 	return d.getByID(ID)
-// }
-
-// GetAll gets a Firestore by ID
-func (d *DatabaseProvider) GetAll(collection string) ([]*firestore.DocumentSnapshot, error) {
-	return d.getAll(collection)
-}
-
-func (d *DatabaseProvider) getAll(collection string) ([]*firestore.DocumentSnapshot, error) {
-	allFirestoreData, err := d.Database.Collection(collection).Documents(context.TODO()).GetAll()
+// GetAll gets all items in a Firestore collection
+func (d *DatabaseProvider) GetAll(target interface{}) error {
+	allFirestoreData, err := d.Database.Collection(d.Collection).Documents(context.TODO()).GetAll()
 	if err != nil {
-		return []*firestore.DocumentSnapshot{}, err
+		return fmt.Errorf("Error getting collection: ", err)
 	}
 
-	// for _, FirestoreData := range allFirestoreData {
-	// 	var Firestore entity.collection
-	// 	err := FirestoreData.DataTo(&Firestore)
-	// 	if err != nil {
-	// 		[]*firestore.DocumentSnapshot{}, fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
-	// 	}
-	// 	firestoreData = append(firestoreData, Firestore)
-	// }
+	for _, firestoreData := range allFirestoreData {
+		err := firestoreData.DataTo(target)
+		if err != nil {
+			return fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
 
-	return allFirestoreData, nil
+		}
+
+	}
+
+	return ErrFirestoreNotFound
 }
 
-// // AddFirestore is to update a Firestore record
-// func (d *DatabaseProvider) AddFirestore(newFirestoreData entity.Firestore) (entity.Firestore, error) {
-// 	firestoreRef, err := d.addFirestore(newFirestoreData)
-// 	if err != nil {
-// 		return entity.Firestore{}, err
-// 	}
-// 	rollbar.Info(fmt.Sprintf("Adding new Firestore %s %s", newFirestoreData.FirstName, newFirestoreData.LastName))
-// 	updatedFirestoreData, err := d.getByFirestoreID(firestoreRef.ID)
-// 	if err != nil {
-// 		return entity.Firestore{}, err
-// 	}
+// GetByID gets an item by ID
+func (d *DatabaseProvider) GetByID(ID string, target interface{}) error {
+	firestoreData, err := d.Database.Collection(d.Collection).Doc(ID).Get(context.TODO())
+	if err != nil {
+		return fmt.Errorf("Error getting %s with ID %s: %w", d.Collection, ID, err)
+	}
 
-// 	return updatedFirestoreData, nil
-// }
+	err = firestoreData.DataTo(target)
+	if err != nil {
+		return fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
 
-// // UpdateFirestore is to update a Firestore record
-// func (d *DatabaseProvider) UpdateFirestore(newFirestoreData entity.Firestore) (entity.Firestore, error) {
-// 	currentFirestoreData, err := d.getByFirestoreID(newFirestoreData.ID)
-// 	// * dev code currentFirestoreData, err := d.getByNameAndCompany(newFirestoreData.FirstName, newFirestoreData.LastName, newFirestoreData.Company)
-// 	if err != nil {
-// 		return entity.Firestore{}, err
-// 	}
-// 	rollbar.Info(fmt.Sprintf("Updating FirestoreID %s. \nOld Data: %v \nNew Data: %v", currentFirestoreData.ID, currentFirestoreData, newFirestoreData))
-// 	updatedFirestore := entity.Firestore{
-// 		ID:        currentFirestoreData.ID,
-// 		Created:   currentFirestoreData.Created,
-// 		FirstName: newFirestoreData.FirstName,
-// 		LastName:  newFirestoreData.LastName,
-// 		Company:   newFirestoreData.Company,
-// 		Email:     newFirestoreData.Email,
-// 		Phone:     newFirestoreData.Phone,
-// 		Timezone:  newFirestoreData.Timezone,
-// 	}
+	}
 
-// 	err = d.setByFirestoreID(currentFirestoreData.ID, updatedFirestore)
+	return ErrFirestoreNotFound
+}
+
+// GetFirstBy gets the first returned item by a path, operator and value
+func (d *DatabaseProvider) GetFirstBy(path string, op string, value string, target interface{}) error {
+	allFirestoreData, err := d.Database.Collection(d.Collection).Where(path, op, value).Documents(context.TODO()).GetAll()
+	if err != nil {
+		return fmt.Errorf("Error getting collection: ", err)
+	}
+
+	for _, firestoreData := range allFirestoreData {
+		err := firestoreData.DataTo(target)
+		if err != nil {
+			return fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
+		}
+
+		return nil
+	}
+
+	return ErrFirestoreNotFound
+}
+
+// Set is to add a Firestore record
+func (d *DatabaseProvider) Set(ID string, data interface{}) error {
+	_, err := d.Database.Collection(d.Collection).Doc(ID).Set(context.TODO(), data)
+	if err != nil {
+		return fmt.Errorf("Error getting %s with ID %s: %w", d.Collection, ID, err)
+	}
+
+	return nil
+}
+
+// Delete is to delete a record
+func (d *DatabaseProvider) Delete(ID string) error {
+	_, err := d.Database.Collection(d.Collection).Doc(ID).Delete(context.TODO())
+	if err != nil {
+		return fmt.Errorf("Error deleting %s with ID %s: %w", d.Collection, ID, err)
+	}
+
+	return nil
+}
+
+// * Do we want to use .Update to keep existing data? Or just pull the data and then use .Set with old+new data?
+// Update is to update a Firestore record
+// func (d *DatabaseProvider) Update(ID string, data interface{}) error {
+// 	err = d.Database.Collection(d.Collection).Doc(ID).Update(context.TODO(), []firestore.Update{data})
 // 	if err != nil {
 // 		return entity.Firestore{}, err
 // 	}

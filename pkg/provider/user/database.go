@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"cloud.google.com/go/firestore"
 	"github.com/coma-toast/pace-api/pkg/entity"
 	"github.com/coma-toast/pace-api/pkg/provider/firestoredb"
 	helper "github.com/coma-toast/pace-api/pkg/utils"
@@ -17,46 +16,71 @@ import (
 
 // DatabaseProvider is a user.Provider the uses a database
 type DatabaseProvider struct {
-	Database *firestore.Client
+	SharedProvider *firestoredb.DatabaseProvider
 }
 
 // ErrUserNotFound if no users are found
 var ErrUserNotFound = errors.New("User not found")
 
-// GetByUsername gets a User by username
-func (d *DatabaseProvider) GetByUsername(username string) (entity.User, error) {
-	return d.getByUsername(username)
-}
-
 // GetAll gets a User by username
 func (d *DatabaseProvider) GetAll() ([]entity.User, error) {
-	return d.getAll()
-}
-
-func (d *DatabaseProvider) getAll() ([]entity.User, error) {
 	var users []entity.User
-
-	allUserData, err := firestoredb.GetAll("users")
-	// allUserData, err := d.Database.Collection("users").Documents(context.TODO()).GetAll()
+	err := d.SharedProvider.GetAll(&users)
 	if err != nil {
-		return []entity.User{}, err
-	}
-
-	for _, userData := range allUserData {
-		var user entity.User
-		err := userData.DataTo(&user)
-		if err != nil {
-			return []entity.User{}, fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
-		}
-		users = append(users, user)
+		return nil, err
 	}
 
 	return users, nil
 }
 
+// GetByUsername gets a User by username
+func (d *DatabaseProvider) GetByUsername(username string) (entity.User, error) {
+	var user entity.User
+
+	err := d.SharedProvider.GetFirstBy("username", "==", username, &user)
+	if err != nil {
+		return entity.User{}, ErrUserNotFound
+	}
+
+	return user, nil
+}
+
+// * HERE
 // AddUser is to update a user record
 func (d *DatabaseProvider) AddUser(newUserData entity.User) (entity.User, error) {
-	userRef, err := d.addUser(newUserData)
+	rollbar.Info(fmt.Sprintf("Adding new Firestore %s %s", newFirestoreData.FirstName, newFirestoreData.LastName))
+
+	existingUser, _ := d.GetByUsername(userData.Username)
+	if (entity.User{}) != existingUser {
+		return entity.User{}, fmt.Errorf("Error adding user %s: Username already exists", userData.Username)
+	}
+	newUUID := uuid.New().String()
+	newUserData := entity.User{
+		ID:        newUUID,
+		Created:   time.Now().String(),
+		FirstName: userData.FirstName,
+		LastName:  userData.LastName,
+		Role:      userData.Role,
+		Username:  userData.Username,
+		Password:  helper.Hash(userData.Password, newUUID),
+		Email:     userData.Email,
+		Phone:     userData.Phone,
+		TimeZone:  userData.TimeZone,
+		DarkMode:  userData.DarkMode,
+	}
+	addUserResult, err := d.Database.Collection("users").Doc(newUUID).Set(context.TODO(), newUserData)
+	if err != nil {
+		return entity.User{}, fmt.Errorf("Error setting user %s by ID: %s", newUserData.Username, err)
+	}
+	rollbar.Info(fmt.Sprintf("User %s added at %s.", newUserData.Username, addUserResult))
+
+	newUser, err := d.getByUserID(newUserData.ID)
+	if err != nil {
+		return entity.User{}, fmt.Errorf("Error getting newly created user %s by ID: %s", newUserData.Username, err)
+	}
+
+	return newUser, nil
+	err := d.SharedProvider.Set(newUserData.ID, newUserData)
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -75,6 +99,8 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 	if err != nil {
 		return entity.User{}, err
 	}
+	rollbar.Info(fmt.Sprintf("Updating FirestoreID %s. \nOld Data: %v \nNew Data: %v", currentFirestoreData.ID, currentFirestoreData, newFirestoreData))
+
 	rollbar.Info(fmt.Sprintf("Updating userID %s. \nOld Data: %v \nNew Data: %v", currentUserData.ID, currentUserData, newUserData))
 	updatedUser := entity.User{
 		ID:        currentUserData.ID,
@@ -119,36 +145,7 @@ func (d *DatabaseProvider) DeleteUser(user entity.UpdateUserRequest) error {
 }
 
 func (d *DatabaseProvider) addUser(userData entity.User) (entity.User, error) {
-	existingUser, _ := d.GetByUsername(userData.Username)
-	if (entity.User{}) != existingUser {
-		return entity.User{}, fmt.Errorf("Error adding user %s: Username already exists", userData.Username)
-	}
-	newUUID := uuid.New().String()
-	newUserData := entity.User{
-		ID:        newUUID,
-		Created:   time.Now().String(),
-		FirstName: userData.FirstName,
-		LastName:  userData.LastName,
-		Role:      userData.Role,
-		Username:  userData.Username,
-		Password:  helper.Hash(userData.Password, newUUID),
-		Email:     userData.Email,
-		Phone:     userData.Phone,
-		TimeZone:  userData.TimeZone,
-		DarkMode:  userData.DarkMode,
-	}
-	addUserResult, err := d.Database.Collection("users").Doc(newUUID).Set(context.TODO(), newUserData)
-	if err != nil {
-		return entity.User{}, fmt.Errorf("Error setting user %s by ID: %s", newUserData.Username, err)
-	}
-	rollbar.Info(fmt.Sprintf("User %s added at %s.", newUserData.Username, addUserResult))
 
-	newUser, err := d.getByUserID(newUserData.ID)
-	if err != nil {
-		return entity.User{}, fmt.Errorf("Error getting newly created user %s by ID: %s", newUserData.Username, err)
-	}
-
-	return newUser, nil
 }
 
 func (d *DatabaseProvider) getByUserID(userID string) (entity.User, error) {
@@ -179,24 +176,4 @@ func (d *DatabaseProvider) deleteByUserID(userID string) error {
 	log.Printf("Deleting user %s: %v", userID, result)
 
 	return nil
-}
-
-func (d *DatabaseProvider) getByUsername(username string) (entity.User, error) {
-	var user entity.User
-
-	users := d.Database.Collection("users").Where("Username", "==", username).Documents(context.TODO())
-	allMatchingUsers, err := users.GetAll()
-	if err != nil {
-		return entity.User{}, err
-	}
-	for _, fbUser := range allMatchingUsers {
-		err = fbUser.DataTo(&user)
-		if err != nil {
-			return entity.User{}, fmt.Errorf("ERROR: User error - Firestore.DataTo() error %w, for user %s", err, username)
-		}
-		return user, nil
-		// data = append(data, fbUser.Data())
-	}
-
-	return entity.User{}, ErrUserNotFound
 }
