@@ -1,6 +1,7 @@
 package user
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -22,10 +23,20 @@ var ErrUserNotFound = errors.New("User not found")
 
 // GetAll gets a User by username
 func (d *DatabaseProvider) GetAll() ([]entity.User, error) {
+	// * HERE
+	// Aaron Ellington:pizza:  3:31 PM
+	// You can have a map of entity.User
+	// Then just add a method to that map type to convert it to a regular struct.	//
 	var users []entity.User
-	err := d.SharedProvider.GetAll(&users)
+	userList := make(map[string]entity.User)
+	err := d.SharedProvider.GetAll(&userList)
 	if err != nil {
 		return nil, err
+	}
+	for _, user := range userList {
+		var userData entity.User
+		err = json.Unmarshal(user, &userData)
+		users = append(users, userData)
 	}
 
 	return users, nil

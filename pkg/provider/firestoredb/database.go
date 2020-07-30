@@ -28,7 +28,6 @@ func (d *DatabaseProvider) GetAll(target interface{}) error {
 		err := firestoreData.DataTo(target)
 		if err != nil {
 			return fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
-
 		}
 
 	}
