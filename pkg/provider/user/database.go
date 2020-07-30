@@ -45,17 +45,17 @@ func (d *DatabaseProvider) GetByUsername(username string) (entity.User, error) {
 	return user, nil
 }
 
-// * HERE
 // AddUser is to update a user record
-func (d *DatabaseProvider) AddUser(newUserData entity.User) (entity.User, error) {
-	rollbar.Info(fmt.Sprintf("Adding new Firestore %s %s", newFirestoreData.FirstName, newFirestoreData.LastName))
+func (d *DatabaseProvider) AddUser(userData entity.User) (entity.User, error) {
+	rollbar.Info(fmt.Sprintf("Adding new User to DB %s %s - %s", userData.FirstName, userData.LastName, userData.Username))
 
 	existingUser, _ := d.GetByUsername(userData.Username)
 	if (entity.User{}) != existingUser {
 		return entity.User{}, fmt.Errorf("Error adding user %s: Username already exists", userData.Username)
 	}
+
 	newUUID := uuid.New().String()
-	newUserData := entity.User{
+	userData = entity.User{
 		ID:        newUUID,
 		Created:   time.Now().String(),
 		FirstName: userData.FirstName,
@@ -68,38 +68,28 @@ func (d *DatabaseProvider) AddUser(newUserData entity.User) (entity.User, error)
 		TimeZone:  userData.TimeZone,
 		DarkMode:  userData.DarkMode,
 	}
-	addUserResult, err := d.Database.Collection("users").Doc(newUUID).Set(context.TODO(), newUserData)
+	err := d.SharedProvider.Set(userData.ID, userData)
 	if err != nil {
-		return entity.User{}, fmt.Errorf("Error setting user %s by ID: %s", newUserData.Username, err)
-	}
-	rollbar.Info(fmt.Sprintf("User %s added at %s.", newUserData.Username, addUserResult))
-
-	newUser, err := d.getByUserID(newUserData.ID)
-	if err != nil {
-		return entity.User{}, fmt.Errorf("Error getting newly created user %s by ID: %s", newUserData.Username, err)
+		return entity.User{}, fmt.Errorf("Error setting user %s by ID: %s", userData.Username, err)
 	}
 
+	var newUser = entity.User{}
+	err = d.SharedProvider.GetByID(userData.ID, &newUser)
+	if err != nil {
+		return entity.User{}, fmt.Errorf("Error getting newly created user %s by ID: %s", userData.Username, err)
+	}
+
+	rollbar.Info(fmt.Sprintf("User %s added.", userData.Username))
 	return newUser, nil
-	err := d.SharedProvider.Set(newUserData.ID, newUserData)
-	if err != nil {
-		return entity.User{}, err
-	}
-	rollbar.Info(fmt.Sprintf("Adding new user %s", newUserData.Username))
-	updatedUserData, err := d.getByUserID(userRef.ID)
-	if err != nil {
-		return entity.User{}, err
-	}
-
-	return updatedUserData, nil
 }
 
 // UpdateUser is to update a user record
 func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (entity.User, error) {
-	currentUserData, err := d.getByUsername(newUserData.Username)
+	currentUserData, err := d.GetByUsername(newUserData.Username)
 	if err != nil {
 		return entity.User{}, err
 	}
-	rollbar.Info(fmt.Sprintf("Updating FirestoreID %s. \nOld Data: %v \nNew Data: %v", currentFirestoreData.ID, currentFirestoreData, newFirestoreData))
+	rollbar.Info(fmt.Sprintf("Updating FirestoreID %s. \nOld Data: %v \nNew Data: %v", currentFirestoreData.ID, currentFirestoreData, userData))
 
 	rollbar.Info(fmt.Sprintf("Updating userID %s. \nOld Data: %v \nNew Data: %v", currentUserData.ID, currentUserData, newUserData))
 	updatedUser := entity.User{
