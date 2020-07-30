@@ -21,7 +21,7 @@ var ErrFirestoreNotFound = errors.New("Firestore Item not found")
 func (d *DatabaseProvider) GetAll(target interface{}) error {
 	allFirestoreData, err := d.Database.Collection(d.Collection).Documents(context.TODO()).GetAll()
 	if err != nil {
-		return fmt.Errorf("Error getting collection: ", err)
+		return fmt.Errorf("Error getting collection: %w", err)
 	}
 
 	for _, firestoreData := range allFirestoreData {

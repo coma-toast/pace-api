@@ -1,10 +1,8 @@
 package user
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/coma-toast/pace-api/pkg/entity"
@@ -89,7 +87,6 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 	if err != nil {
 		return entity.User{}, err
 	}
-	rollbar.Info(fmt.Sprintf("Updating FirestoreID %s. \nOld Data: %v \nNew Data: %v", currentFirestoreData.ID, currentFirestoreData, userData))
 
 	rollbar.Info(fmt.Sprintf("Updating userID %s. \nOld Data: %v \nNew Data: %v", currentUserData.ID, currentUserData, newUserData))
 	updatedUser := entity.User{
@@ -106,11 +103,13 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 		DarkMode:  newUserData.DarkMode,
 	}
 
-	err = d.setByUserID(currentUserData.ID, updatedUser)
+	err = d.SharedProvider.Set(currentUserData.ID, updatedUser)
 	if err != nil {
 		return entity.User{}, err
 	}
-	updatedUserData, err := d.getByUserID(updatedUser.ID)
+
+	var updatedUserData = entity.User{}
+	err = d.SharedProvider.GetByID(currentUserData.ID, &updatedUserData)
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -120,50 +119,15 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 
 // DeleteUser is to update a user record
 func (d *DatabaseProvider) DeleteUser(user entity.UpdateUserRequest) error {
-	userData, err := d.getByUsername(user.Username)
+	currentUserData, err := d.GetByUsername(user.Username)
 	if err != nil {
 		return err
 	}
-
-	err = d.deleteByUserID(userData.ID)
+	err = d.SharedProvider.Delete(currentUserData.ID)
 	if err != nil {
 		return err
 	}
-	rollbar.Info(fmt.Sprintf("Deleted user %s", userData.Username))
-
-	return nil
-}
-
-func (d *DatabaseProvider) addUser(userData entity.User) (entity.User, error) {
-
-}
-
-func (d *DatabaseProvider) getByUserID(userID string) (entity.User, error) {
-	var user entity.User
-	userData, err := d.Database.Collection("users").Doc(userID).Get(context.TODO())
-	if err != nil {
-		return entity.User{}, fmt.Errorf("Error getting user %s by ID: %s", userID, err)
-	}
-	userData.DataTo(&user)
-
-	return user, nil
-}
-
-func (d *DatabaseProvider) setByUserID(userID string, userData entity.User) error {
-	_, err := d.Database.Collection("users").Doc(userID).Set(context.TODO(), userData)
-	if err != nil {
-		return fmt.Errorf("Error setting user %s by ID: %s", userID, err)
-	}
-
-	return nil
-}
-
-func (d *DatabaseProvider) deleteByUserID(userID string) error {
-	result, err := d.Database.Collection("users").Doc(userID).Delete(context.TODO())
-	if err != nil {
-		return fmt.Errorf("Error deleting user %s by ID: %s", userID, err)
-	}
-	log.Printf("Deleting user %s: %v", userID, result)
+	rollbar.Info(fmt.Sprintf("Deleted user %s", user.Username))
 
 	return nil
 }
