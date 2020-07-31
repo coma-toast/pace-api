@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/firestore"
+	"github.com/mitchellh/mapstructure"
 )
 
 // DatabaseProvider is a firestore.Provider the uses a database
@@ -18,8 +19,8 @@ type DatabaseProvider struct {
 var ErrFirestoreNotFound = errors.New("Firestore Item not found")
 
 // GetAll gets all items in a Firestore collection
-func (d *DatabaseProvider) GetAll(target *interface{}) error {
-	fmt.Println("collection " + d.Collection)
+func (d *DatabaseProvider) GetAll(target interface{}) error {
+	returnData := make([]interface{}, 0)
 	allFirestoreData, err := d.Database.Collection(d.Collection).Documents(context.TODO()).GetAll()
 	// test, err := d.Database.Collection(d.Collection).Documents(context.TODO()).GetAll()
 	// for _, testData := range test {
@@ -29,21 +30,19 @@ func (d *DatabaseProvider) GetAll(target *interface{}) error {
 		return fmt.Errorf("Error getting collection: %w", err)
 	}
 	for _, firestoreData := range allFirestoreData {
-		// var data interface{}
-		// err := firestoreData.DataTo(&data)
-		// spew.Dump(data)
-		// target = append(target, firestoreData.Data())
-		currentItem := firestoreData.Data()
-
-		*target = append(*target, currentItem)
-		// err := firestoreData.DataTo(target)
+		data := make(map[string]interface{})
+		err := firestoreData.DataTo(&data)
+		returnData = append(returnData, data)
 		if err != nil {
 			return fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
 		}
 
 	}
 
-	return ErrFirestoreNotFound
+	mapstructure.Decode(returnData, target)
+
+	return nil
+	// return ErrFirestoreNotFound
 }
 
 // GetByID gets an item by ID
