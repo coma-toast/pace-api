@@ -18,14 +18,25 @@ type DatabaseProvider struct {
 var ErrFirestoreNotFound = errors.New("Firestore Item not found")
 
 // GetAll gets all items in a Firestore collection
-func (d *DatabaseProvider) GetAll(target interface{}) error {
+func (d *DatabaseProvider) GetAll(target *interface{}) error {
+	fmt.Println("collection " + d.Collection)
 	allFirestoreData, err := d.Database.Collection(d.Collection).Documents(context.TODO()).GetAll()
+	// test, err := d.Database.Collection(d.Collection).Documents(context.TODO()).GetAll()
+	// for _, testData := range test {
+	// 	fmt.Println(testData.Data())
+	// }
 	if err != nil {
 		return fmt.Errorf("Error getting collection: %w", err)
 	}
-
 	for _, firestoreData := range allFirestoreData {
-		err := firestoreData.DataTo(target)
+		// var data interface{}
+		// err := firestoreData.DataTo(&data)
+		// spew.Dump(data)
+		// target = append(target, firestoreData.Data())
+		currentItem := firestoreData.Data()
+
+		*target = append(*target, currentItem)
+		// err := firestoreData.DataTo(target)
 		if err != nil {
 			return fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
 		}
