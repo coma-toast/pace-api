@@ -130,21 +130,21 @@ func (a App) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %s", err), r)
-		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		jsonResponse(http.StatusBadRequest, err, w)
 		return
 	}
 
 	provider, err := a.Container.UserProvider()
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error getting UserProvider: %s", err), r)
-		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		jsonResponse(http.StatusInternalServerError, err, w)
 		return
 	}
 
 	updatedUser, err := provider.UpdateUser(user)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error setting UserProvider: %s", err), r)
-		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		jsonResponse(http.StatusInternalServerError, err, w)
 		return
 	}
 

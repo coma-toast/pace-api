@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"cloud.google.com/go/firestore"
 	"github.com/mitchellh/mapstructure"
@@ -58,14 +59,15 @@ func (d *DatabaseProvider) GetByID(ID string, target interface{}) error {
 
 	}
 
-	return ErrFirestoreNotFound
+	return nil
 }
 
 // GetFirstBy gets the first returned item by a path, operator and value
 func (d *DatabaseProvider) GetFirstBy(path string, op string, value string, target interface{}) error {
 	allFirestoreData, err := d.Database.Collection(d.Collection).Where(path, op, value).Documents(context.TODO()).GetAll()
+	log.Println(allFirestoreData)
 	if err != nil {
-		return fmt.Errorf("Error getting collection: ", err)
+		return fmt.Errorf("Error getting collection: %s", err)
 	}
 
 	for _, firestoreData := range allFirestoreData {
@@ -77,14 +79,14 @@ func (d *DatabaseProvider) GetFirstBy(path string, op string, value string, targ
 		return nil
 	}
 
-	return ErrFirestoreNotFound
+	return fmt.Errorf("%s not found: %s", path, value)
 }
 
 // Set is to add a Firestore record
 func (d *DatabaseProvider) Set(ID string, data interface{}) error {
 	_, err := d.Database.Collection(d.Collection).Doc(ID).Set(context.TODO(), data)
 	if err != nil {
-		return fmt.Errorf("Error getting %s with ID %s: %w", d.Collection, ID, err)
+		return fmt.Errorf("Error setting %s with ID %s: %w", d.Collection, ID, err)
 	}
 
 	return nil

@@ -22,18 +22,11 @@ var ErrUserNotFound = errors.New("User not found")
 
 // GetAll gets a User by username
 func (d *DatabaseProvider) GetAll() ([]entity.User, error) {
-	// * HERE
-	// Aaron Ellington:pizza:  3:31 PM
-	// You can have a map of entity.User
-	// Then just add a method to that map type to convert it to a regular struct.	//
 	var users []entity.User
-	// userList := make(map[string]interface{})
 	err := d.SharedProvider.GetAll(&users)
-	// err := d.SharedProvider.GetAll(&userList)
 	if err != nil {
 		return nil, err
 	}
-	// mapstructure.Decode(userList, &users)
 
 	return users, nil
 }
@@ -41,10 +34,9 @@ func (d *DatabaseProvider) GetAll() ([]entity.User, error) {
 // GetByUsername gets a User by username
 func (d *DatabaseProvider) GetByUsername(username string) (entity.User, error) {
 	var user entity.User
-
-	err := d.SharedProvider.GetFirstBy("username", "==", username, &user)
+	err := d.SharedProvider.GetFirstBy("Username", "==", username, &user)
 	if err != nil {
-		return entity.User{}, ErrUserNotFound
+		return entity.User{}, fmt.Errorf("%s: %w", err, ErrUserNotFound)
 	}
 
 	return user, nil
@@ -54,9 +46,10 @@ func (d *DatabaseProvider) GetByUsername(username string) (entity.User, error) {
 func (d *DatabaseProvider) AddUser(userData entity.User) (entity.User, error) {
 	rollbar.Info(fmt.Sprintf("Adding new User to DB %s %s - %s", userData.FirstName, userData.LastName, userData.Username))
 
-	existingUser, _ := d.GetByUsername(userData.Username)
-	if (entity.User{}) != existingUser {
-		return entity.User{}, fmt.Errorf("Error adding user %s: Username already exists", userData.Username)
+	existingUser, err := d.GetByUsername(userData.Username)
+	if err == nil {
+		// if (entity.User{}) != existingUser {
+		return entity.User{}, fmt.Errorf("Error adding user %s: Username already exists. ID: %s", userData.Username, existingUser.ID)
 	}
 
 	newUUID := uuid.New().String()
@@ -73,7 +66,7 @@ func (d *DatabaseProvider) AddUser(userData entity.User) (entity.User, error) {
 		TimeZone:  userData.TimeZone,
 		DarkMode:  userData.DarkMode,
 	}
-	err := d.SharedProvider.Set(userData.ID, userData)
+	err = d.SharedProvider.Set(userData.ID, userData)
 	if err != nil {
 		return entity.User{}, fmt.Errorf("Error setting user %s by ID: %s", userData.Username, err)
 	}
@@ -90,7 +83,11 @@ func (d *DatabaseProvider) AddUser(userData entity.User) (entity.User, error) {
 
 // UpdateUser is to update a user record
 func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (entity.User, error) {
-	currentUserData, err := d.GetByUsername(newUserData.Username)
+	var currentUserData entity.User
+	err := d.SharedProvider.GetFirstBy("Username", "==", newUserData.Username, &currentUserData)
+	// currentUserData, err := d.GetByUsername(newUserData.Username)
+	fmt.Println(currentUserData)
+	fmt.Println(newUserData)
 	if err != nil {
 		return entity.User{}, err
 	}
