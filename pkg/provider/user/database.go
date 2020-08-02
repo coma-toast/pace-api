@@ -118,11 +118,14 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 		return entity.User{}, err
 	}
 
+	rollbar.Info(fmt.Sprintf("User %s updated.", updatedUserData.Username))
+
 	return updatedUserData, nil
 }
 
 // DeleteUser is to update a user record
 func (d *DatabaseProvider) DeleteUser(user entity.UpdateUserRequest) error {
+	rollbar.Info(fmt.Sprintf("Deleting User from DB: %s %s (%s)", user.FirstName, user.LastName, user.Username))
 	currentUserData, err := d.GetByUsername(user.Username)
 	if err != nil {
 		return err

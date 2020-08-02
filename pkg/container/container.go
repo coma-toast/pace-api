@@ -46,11 +46,12 @@ func (p Production) UserProvider() (user.Provider, error) {
 	if p.userProvider != nil {
 		return p.userProvider, nil
 	}
-	// TODO: copy Hub user provider (mutex lock, etc)
+
 	firestoreConnection, err := p.getFirestoreConnection()
 	if err != nil {
 		return nil, err
 	}
+
 	p.userProvider = &user.DatabaseProvider{
 		SharedProvider: &firestoredb.DatabaseProvider{
 			Database:   firestoreConnection,
@@ -72,8 +73,10 @@ func (p Production) ContactProvider() (contact.Provider, error) {
 		return nil, err
 	}
 	p.contactProvider = &contact.DatabaseProvider{
-		Database: firestoreConnection,
-	}
+		SharedProvider: &firestoredb.DatabaseProvider{
+			Database:   firestoreConnection,
+			Collection: "company",
+		}}
 
 	return p.contactProvider, nil
 }
@@ -83,11 +86,12 @@ func (p Production) CompanyProvider() (company.Provider, error) {
 	if p.companyProvider != nil {
 		return p.companyProvider, nil
 	}
-	// TODO: copy Hub contact provider (mutex lock, etc)
+
 	firestoreConnection, err := p.getFirestoreConnection()
 	if err != nil {
 		return nil, err
 	}
+
 	p.companyProvider = &company.DatabaseProvider{
 		Database: firestoreConnection,
 	}
@@ -100,11 +104,12 @@ func (p Production) ProjectProvider() (project.Provider, error) {
 	if p.projectProvider != nil {
 		return p.projectProvider, nil
 	}
-	// TODO: copy Hub contact provider (mutex lock, etc)
+
 	firestoreConnection, err := p.getFirestoreConnection()
 	if err != nil {
 		return nil, err
 	}
+
 	p.projectProvider = &project.DatabaseProvider{
 		Database: firestoreConnection,
 	}

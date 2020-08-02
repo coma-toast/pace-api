@@ -7,15 +7,15 @@ import (
 	"log"
 	"time"
 
-	"cloud.google.com/go/firestore"
 	"github.com/coma-toast/pace-api/pkg/entity"
+	"github.com/coma-toast/pace-api/pkg/provider/firestoredb"
 	"github.com/google/uuid"
 	"github.com/rollbar/rollbar-go"
 )
 
 // DatabaseProvider is a company.Provider the uses a database
 type DatabaseProvider struct {
-	Database *firestore.Client
+	SharedProvider *firestoredb.DatabaseProvider
 }
 
 // ErrCompanyNotFound if no companies are found
@@ -28,27 +28,64 @@ var ErrCompanyNotFound = errors.New("Company not found")
 
 // GetAll gets a Company by ID
 func (d *DatabaseProvider) GetAll() ([]entity.Company, error) {
-	return d.getAll()
+	var allCompanyData []entity.Company
+
+	err := d.SharedProvider.GetAll(&allCompanyData)
+	if err != nil {
+		return []entity.Company{}, err
+	}
+
+	return allCompanyData, nil
 }
 
 // GetByName gets a Company by name
 func (d *DatabaseProvider) GetByName(companyName string) (entity.Company, error) {
-	return d.getByName(companyName)
+	var company entity.Company
+	err := d.SharedProvider.GetFirstBy("Name", "==", companyName, &company)
+	if err != nil {
+		return entity.Company{}, err
+	}
+
+	return company, nil
 }
 
 // AddCompany is to update a Company record
 func (d *DatabaseProvider) AddCompany(newCompanyData entity.Company) (entity.Company, error) {
-	companyRef, err := d.addCompany(newCompanyData)
-	if err != nil {
-		return entity.Company{}, err
-	}
-	rollbar.Info(fmt.Sprintf("Adding new Company %s", newCompanyData.Name))
-	updatedCompanyData, err := d.getByCompanyID(companyRef.ID)
-	if err != nil {
-		return entity.Company{}, err
+	rollbar.Info(fmt.Sprintf("Adding new Company to DB %s", newCompanyData.Name))
+
+	existingCompany, err := d.GetByName(newCompanyData.Name)
+	if err == nil {
+		// if (entity.Company{}) != existingCompany {
+		return entity.Company{}, fmt.Errorf("Error adding Company %s: Companyname already exists. ID: %s", newCompanyData.Companyname, existingCompany.ID)
 	}
 
-	return updatedCompanyData, nil
+	newUUID := uuid.New().String()
+	newCompanyData = entity.Company{
+		ID:             newUUID,
+		Created:        time.Now().String(),
+		Name:           newCompanyData.Name,
+		PrimaryContact: newCompanyData.PrimaryContact,
+		Contacts:       newCompanyData.Contacts,
+		Phone:          newCompanyData.Phone,
+		Email:          newCompanyData.Email,
+		Address:        newCompanyData.Address,
+		City:           newCompanyData.City,
+		State:          newCompanyData.State,
+		Zip:            newCompanyData.Zip,
+	}
+	err = d.SharedProvider.Set(newCompanyData.ID, newCompanyData)
+	if err != nil {
+		return entity.Company{}, fmt.Errorf("Error setting Company %s by ID: %s", newCompanyData.Name, err)
+	}
+
+	var newCompany = entity.Company{}
+	err = d.SharedProvider.GetByID(newCompanyData.ID, &newCompany)
+	if err != nil {
+		return entity.Company{}, fmt.Errorf("Error getting newly created Company %s by ID: %s", newCompanyData.Name, err)
+	}
+
+	rollbar.Info(fmt.Sprintf("Company %s added.", newCompanyData.Name))
+	return newCompany, nil
 }
 
 // UpdateCompany is to update a Company record
@@ -127,26 +164,6 @@ func (d *DatabaseProvider) addCompany(companyData entity.Company) (entity.Compan
 	}
 
 	return newCompany, nil
-}
-
-func (d *DatabaseProvider) getAll() ([]entity.Company, error) {
-	var company []entity.Company
-
-	allCompanyData, err := d.Database.Collection("company").Documents(context.TODO()).GetAll()
-	if err != nil {
-		return []entity.Company{}, err
-	}
-
-	for _, CompanyData := range allCompanyData {
-		var Company entity.Company
-		err := CompanyData.DataTo(&Company)
-		if err != nil {
-			return []entity.Company{}, fmt.Errorf("ERROR: GetAll(): Firestore.DataTo() error %w", err)
-		}
-		company = append(company, Company)
-	}
-
-	return company, nil
 }
 
 func (d *DatabaseProvider) getByCompanyID(companyID string) (entity.Company, error) {
