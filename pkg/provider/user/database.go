@@ -42,13 +42,13 @@ func (d *DatabaseProvider) GetByUsername(username string) (entity.User, error) {
 	return user, nil
 }
 
-// AddUser is to update a user record
-func (d *DatabaseProvider) AddUser(userData entity.User) (entity.User, error) {
+// Add is to update a user record
+func (d *DatabaseProvider) Add(userData entity.User) (entity.User, error) {
 	rollbar.Info(fmt.Sprintf("Adding new User to DB %s %s - %s", userData.FirstName, userData.LastName, userData.Username))
 
-	existingUser, err := d.GetByUsername(userData.Username)
-	if err == nil {
-		// if (entity.User{}) != existingUser {
+	var existingUser entity.User
+	err := d.SharedProvider.GetFirstBy("Username", "==", userData.Username, &existingUser)
+	if (entity.User{}) != existingUser {
 		return entity.User{}, fmt.Errorf("Error adding user %s: Username already exists. ID: %s", userData.Username, existingUser.ID)
 	}
 
@@ -81,13 +81,10 @@ func (d *DatabaseProvider) AddUser(userData entity.User) (entity.User, error) {
 	return newUser, nil
 }
 
-// UpdateUser is to update a user record
-func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (entity.User, error) {
+// Update is to update a user record
+func (d *DatabaseProvider) Update(newUserData entity.UpdateUserRequest) (entity.User, error) {
 	var currentUserData entity.User
 	err := d.SharedProvider.GetFirstBy("Username", "==", newUserData.Username, &currentUserData)
-	// currentUserData, err := d.GetByUsername(newUserData.Username)
-	fmt.Println(currentUserData)
-	fmt.Println(newUserData)
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -123,14 +120,18 @@ func (d *DatabaseProvider) UpdateUser(newUserData entity.UpdateUserRequest) (ent
 	return updatedUserData, nil
 }
 
-// DeleteUser is to update a user record
-func (d *DatabaseProvider) DeleteUser(user entity.UpdateUserRequest) error {
+// Delete deletes a user
+func (d *DatabaseProvider) Delete(user entity.User) error {
 	rollbar.Info(fmt.Sprintf("Deleting User from DB: %s %s (%s)", user.FirstName, user.LastName, user.Username))
-	currentUserData, err := d.GetByUsername(user.Username)
-	if err != nil {
-		return err
+
+	var currentUser entity.User
+
+	err := d.SharedProvider.GetByID(user.ID, &currentUser)
+	if (entity.User{}) == currentUser {
+		return fmt.Errorf("User not found")
 	}
-	err = d.SharedProvider.Delete(currentUserData.ID)
+
+	err = d.SharedProvider.Delete(user.ID)
 	if err != nil {
 		return err
 	}

@@ -141,7 +141,7 @@ func (a App) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedUser, err := provider.UpdateUser(user)
+	updatedUser, err := provider.Update(user)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error setting UserProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err, w)
@@ -168,7 +168,7 @@ func (a App) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedUser, err := provider.AddUser(user)
+	updatedUser, err := provider.Add(user)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error setting UserProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -180,7 +180,7 @@ func (a App) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUserHandler deletes an existing user
 func (a App) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	var user entity.UpdateUserRequest
+	var user entity.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a User: %s", err), r)
@@ -195,7 +195,7 @@ func (a App) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = provider.DeleteUser(user)
+	err = provider.Delete(user)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error deleting User: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -237,7 +237,7 @@ func (a App) UpdateContactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedUser, err := provider.UpdateContact(contact)
+	updatedUser, err := provider.Update(contact)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error setting ContactProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -263,7 +263,7 @@ func (a App) CreateContactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedContact, err := provider.AddContact(contact)
+	updatedContact, err := provider.Add(contact)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error setting ContactProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -290,7 +290,7 @@ func (a App) DeleteContactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = provider.DeleteContact(contact)
+	err = provider.Delete(contact)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error deleting contact: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -334,7 +334,7 @@ func (a App) UpdateCompanyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedUser, err := provider.UpdateCompany(company)
+	updatedUser, err := provider.Update(company)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error setting CompanyProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -361,7 +361,7 @@ func (a App) CreateCompanyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedUser, err := provider.AddCompany(company)
+	updatedUser, err := provider.Add(company)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error setting CompanyProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -388,7 +388,7 @@ func (a App) DeleteCompanyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = provider.DeleteCompany(company)
+	err = provider.Delete(company)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error deleting company: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -443,7 +443,7 @@ func (a App) DeleteCompanyHandler(w http.ResponseWriter, r *http.Request) {
 // 		return
 // 	}
 
-// 	updatedProject, err := provider.UpdateProject(user)
+// 	updatedProject, err := provider.Update(user)
 // 	if err != nil {
 // 		rollbar.Warning(fmt.Sprintf("Error setting ProjectProvider: %s", err), r)
 // 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -470,7 +470,7 @@ func (a App) DeleteCompanyHandler(w http.ResponseWriter, r *http.Request) {
 // 		return
 // 	}
 
-// 	updatedProject, err := provider.AddProject(user)
+// 	updatedProject, err := provider.Add(user)
 // 	if err != nil {
 // 		rollbar.Warning(fmt.Sprintf("Error setting ProjectProvider: %s", err), r)
 // 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
@@ -497,7 +497,7 @@ func (a App) DeleteCompanyHandler(w http.ResponseWriter, r *http.Request) {
 // 		return
 // 	}
 
-// 	err = provider.DeleteProject(user)
+// 	err = provider.Delete(user)
 // 	if err != nil {
 // 		rollbar.Warning(fmt.Sprintf("Error deleting Project: %s", err), r)
 // 		jsonResponse(http.StatusInternalServerError, err.Error(), w)

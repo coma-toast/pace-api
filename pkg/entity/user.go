@@ -15,21 +15,6 @@ type User struct {
 	DarkMode  bool   `json:"darkmode"`
 }
 
-// FirestoreUser is the user data
-type FirestoreUser struct {
-	ID        string `firestore:"id"`
-	Created   string `firestore:"created"`
-	FirstName string `firestore:"firstname"`
-	LastName  string `firestore:"lastname"`
-	Role      string `firestore:"role"`
-	Username  string `firestore:"username"`
-	Password  string `firestore:"-"`
-	Email     string `firestore:"email"`
-	Phone     string `firestore:"phone"`
-	TimeZone  string `firestore:"timezone"`
-	DarkMode  bool   `firestore:"darkmode"`
-}
-
 // UpdateUserRequest is a passwordless user entity
 type UpdateUserRequest struct {
 	FirstName string `json:"firstname"`

@@ -10,6 +10,8 @@ import (
 	"github.com/coma-toast/pace-api/pkg/provider/company"
 	"github.com/coma-toast/pace-api/pkg/provider/contact"
 	"github.com/coma-toast/pace-api/pkg/provider/firestoredb"
+	"github.com/coma-toast/pace-api/pkg/provider/inspection"
+	"github.com/coma-toast/pace-api/pkg/provider/inventory"
 	"github.com/coma-toast/pace-api/pkg/provider/project"
 	"github.com/coma-toast/pace-api/pkg/provider/user"
 	"google.golang.org/api/option"
@@ -21,24 +23,30 @@ type Container interface {
 	ContactProvider() (contact.Provider, error)
 	CompanyProvider() (company.Provider, error)
 	ProjectProvider() (project.Provider, error)
+	InspectionProvider() (inspection.Provider, error)
+	InventoryProvider() (inventory.Provider, error)
 }
 
 // Production is our production container for our external connections
 type Production struct {
 	config *paceconfig.Config
 	// Providers
-	userProvider    *user.DatabaseProvider
-	contactProvider *contact.DatabaseProvider
-	companyProvider *company.DatabaseProvider
-	projectProvider *project.DatabaseProvider
+	userProvider       *user.DatabaseProvider
+	contactProvider    *contact.DatabaseProvider
+	companyProvider    *company.DatabaseProvider
+	projectProvider    *project.DatabaseProvider
+	inspectionProvider *inspection.DatabaseProvider
+	inventoryProvider  *inventory.DatabaseProvider
 	// Clients
 	firestoreClient *firestore.Client
 	// Mutex Locks
-	userProviderMutex    *sync.Mutex
-	contactProviderMutex *sync.Mutex
-	companyProviderMutex *sync.Mutex
-	projectProviderMutex *sync.Mutex
-	firestoreClientMutex *sync.Mutex
+	userProviderMutex       *sync.Mutex
+	contactProviderMutex    *sync.Mutex
+	companyProviderMutex    *sync.Mutex
+	projectProviderMutex    *sync.Mutex
+	inspectionProviderMutex *sync.Mutex
+	inventoryProviderMutex  *sync.Mutex
+	firestoreClientMutex    *sync.Mutex
 }
 
 // UserProvider provides the user provider
@@ -67,7 +75,7 @@ func (p Production) ContactProvider() (contact.Provider, error) {
 	if p.contactProvider != nil {
 		return p.contactProvider, nil
 	}
-	// TODO: copy Hub contact provider (mutex lock, etc)
+
 	firestoreConnection, err := p.getFirestoreConnection()
 	if err != nil {
 		return nil, err
@@ -75,7 +83,7 @@ func (p Production) ContactProvider() (contact.Provider, error) {
 	p.contactProvider = &contact.DatabaseProvider{
 		SharedProvider: &firestoredb.DatabaseProvider{
 			Database:   firestoreConnection,
-			Collection: "company",
+			Collection: "contacts",
 		}}
 
 	return p.contactProvider, nil
@@ -93,9 +101,11 @@ func (p Production) CompanyProvider() (company.Provider, error) {
 	}
 
 	p.companyProvider = &company.DatabaseProvider{
-		Database: firestoreConnection,
+		SharedProvider: &firestoredb.DatabaseProvider{
+			Database:   firestoreConnection,
+			Collection: "company",
+		},
 	}
-
 	return p.companyProvider, nil
 }
 
@@ -111,21 +121,68 @@ func (p Production) ProjectProvider() (project.Provider, error) {
 	}
 
 	p.projectProvider = &project.DatabaseProvider{
-		Database: firestoreConnection,
+		SharedProvider: &firestoredb.DatabaseProvider{
+			Database:   firestoreConnection,
+			Collection: "project",
+		},
 	}
 
 	return p.projectProvider, nil
 }
 
+// InspectionProvider provides the Company provider
+func (p Production) InspectionProvider() (inspection.Provider, error) {
+	if p.inspectionProvider != nil {
+		return p.inspectionProvider, nil
+	}
+
+	firestoreConnection, err := p.getFirestoreConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	p.inspectionProvider = &inspection.DatabaseProvider{
+		SharedProvider: &firestoredb.DatabaseProvider{
+			Database:   firestoreConnection,
+			Collection: "inspection",
+		},
+	}
+
+	return p.inspectionProvider, nil
+}
+
+// InventoryProvider provides the Company provider
+func (p Production) InventoryProvider() (inventory.Provider, error) {
+	if p.inventoryProvider != nil {
+		return p.inventoryProvider, nil
+	}
+
+	firestoreConnection, err := p.getFirestoreConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	p.inventoryProvider = &inventory.DatabaseProvider{
+		SharedProvider: &firestoredb.DatabaseProvider{
+			Database:   firestoreConnection,
+			Collection: "inventory",
+		},
+	}
+
+	return p.inventoryProvider, nil
+}
+
 // NewProduction builds a container with all of the config
 func NewProduction(paceconfig *paceconfig.Config) Container {
 	return &Production{
-		config:               paceconfig,
-		userProviderMutex:    &sync.Mutex{},
-		contactProviderMutex: &sync.Mutex{},
-		companyProviderMutex: &sync.Mutex{},
-		projectProviderMutex: &sync.Mutex{},
-		firestoreClientMutex: &sync.Mutex{},
+		config:                  paceconfig,
+		userProviderMutex:       &sync.Mutex{},
+		contactProviderMutex:    &sync.Mutex{},
+		companyProviderMutex:    &sync.Mutex{},
+		projectProviderMutex:    &sync.Mutex{},
+		inspectionProviderMutex: &sync.Mutex{},
+		inventoryProviderMutex:  &sync.Mutex{},
+		firestoreClientMutex:    &sync.Mutex{},
 	}
 }
 
