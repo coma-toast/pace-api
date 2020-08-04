@@ -424,7 +424,7 @@ func (a App) GetProjectHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonResponse(http.StatusOK, allProjects, w)
 	} else {
-		user, err := provider.GetByProjectname(projectName)
+		user, err := provider.GetByName(projectName)
 		if err != nil {
 			rollbar.Warning(fmt.Sprintf("Error getting Project: %s", err), r)
 			jsonResponse(http.StatusInternalServerError, err, w)
@@ -490,8 +490,8 @@ func (a App) CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 
 // DeleteProjectHandler deletes an existing user
 func (a App) DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
-	var user entity.UpdateProjectRequest
-	err := json.NewDecoder(r.Body).Decode(&user)
+	var project entity.Project
+	err := json.NewDecoder(r.Body).Decode(&project)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a Project: %s", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
@@ -505,59 +505,73 @@ func (a App) DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = provider.Delete(user)
+	err = provider.Delete(project)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error deleting Project: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 
-	jsonResponse(http.StatusOK, fmt.Sprintf("Project %s Deleted", user.Projectname), w)
+	jsonResponse(http.StatusOK, fmt.Sprintf("Project %s Deleted", project.Name), w)
 }
 
 // GetInventoryHandler Gets Inventory
 func (a App) GetInventoryHandler(w http.ResponseWriter, r *http.Request) {
 	var inventory entity.Inventory
-	err := json.NewDecoder(r.Body).Decode(&inventory)
+	inventoryID := r.URL.Query().Get("id")
+
+	provider, err := a.Container.InventoryProvider()
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error decoding JSON when inventory: %w", err)r)
-		jsonResponse(http.StatusBadRequest, err.Error(), w)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InventoryProvider: %w", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 
-	provider, err := a.Container.tInventoryProvider()
-	if err != nil {
-				rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InventoryProvider: %w", err)r)
-				jsonResponse(http.StatusInternalServerError, err.Error(), w)
-				return
+	if inventoryID == "" {
+		allProjects, err := provider.GetAll()
+		if err != nil {
+			rollbar.Warning(fmt.Sprintf("Error getting All Projects: %s", err), r)
+			jsonResponse(http.StatusInternalServerError, err, w)
+			return
+		}
+		jsonResponse(http.StatusOK, allProjects, w)
+	} else {
+		err = provider.GetByID(inventory.ID)
+		if err != nil {
+			rollbar.Warning(fmt.Sprintf("Error getting Inventory %s: %s", inventory.ID))
+			jsonResponse(http.StatusInternalServerError, err.Error(), w)
+			return
+
+		}
+		jsonResponse(http.StatusOK, user, w)
 	}
-	
-	err = provider.Get(inventory)
+	err := json.NewDecoder(r.Body).Decode(&inventory)
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error getting Inventory %s: %s", inventory.ID, ))
-		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when inventory: %w", err), r)
+		jsonResponse(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 
 	jsonResponse(http.StatusOK, fmt.Sprintf("tInventory  : %s", inventory), w)
 }
+
 // UpdateInventoryHandler Updates Inventory
 func (a App) UpdateInventoryHandler(w http.ResponseWriter, r *http.Request) {
 	var eInventory entity.eInventory
 	err := json.NewDecoder(r.Body).Decode(&eInventory)
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error decoding JSON when eInventory: %w", err)r)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when eInventory: %w", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 
 	provider, err := a.Container.eInventoryProvider()
 	if err != nil {
-				rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting eInventoryProvider: %w", err)r)
-				jsonResponse(http.StatusInternalServerError, err.Error(), w)
-				return
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting eInventoryProvider: %w", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
 	}
-	
+
 	err = provider.Upd(eInventory)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error eInventory"))
@@ -567,23 +581,24 @@ func (a App) UpdateInventoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(http.StatusOK, fmt.Sprintf("eInventory  : %s", eInventory), w)
 }
+
 // CreateInventoryHandler Creates Inventory
 func (a App) CreateInventoryHandler(w http.ResponseWriter, r *http.Request) {
 	var eInventory entity.eInventory
 	err := json.NewDecoder(r.Body).Decode(&eInventory)
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error decoding JSON when eInventory: %w", err)r)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when eInventory: %w", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 
 	provider, err := a.Container.eInventoryProvider()
 	if err != nil {
-				rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting eInventoryProvider: %w", err)r)
-				jsonResponse(http.StatusInternalServerError, err.Error(), w)
-				return
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting eInventoryProvider: %w", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
 	}
-	
+
 	err = provider.Cre(eInventory)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error eInventory"))
@@ -593,23 +608,24 @@ func (a App) CreateInventoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(http.StatusOK, fmt.Sprintf("eInventory  : %s", eInventory), w)
 }
+
 // DeleteInventoryHandler Deletes Inventory
 func (a App) DeleteInventoryHandler(w http.ResponseWriter, r *http.Request) {
 	var eInventory entity.eInventory
 	err := json.NewDecoder(r.Body).Decode(&eInventory)
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error decoding JSON when eInventory: %w", err)r)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when eInventory: %w", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 
 	provider, err := a.Container.eInventoryProvider()
 	if err != nil {
-				rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting eInventoryProvider: %w", err)r)
-				jsonResponse(http.StatusInternalServerError, err.Error(), w)
-				return
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting eInventoryProvider: %w", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
 	}
-	
+
 	err = provider.Del(eInventory)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error eInventory"))
@@ -619,23 +635,24 @@ func (a App) DeleteInventoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(http.StatusOK, fmt.Sprintf("eInventory  : %s", eInventory), w)
 }
+
 // GetInspectionHandler GetIs nspection
 func (a App) GetInspectionHandler(w http.ResponseWriter, r *http.Request) {
 	var Inspection entity.Inspection
 	err := json.NewDecoder(r.Body).Decode(&Inspection)
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error decoding JSON when Inspection: %w", err)r)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when Inspection: %w", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 
 	provider, err := a.Container.InspectionProvider()
 	if err != nil {
-				rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InspectionProvider: %w", err)r)
-				jsonResponse(http.StatusInternalServerError, err.Error(), w)
-				return
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InspectionProvider: %w", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
 	}
-	
+
 	err = provider.Get(Inspection)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error Inspection"))
@@ -645,23 +662,24 @@ func (a App) GetInspectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(http.StatusOK, fmt.Sprintf("Inspection  : %s", Inspection), w)
 }
+
 // UpdateInspectionHandler UpdateIs nspection
 func (a App) UpdateInspectionHandler(w http.ResponseWriter, r *http.Request) {
 	var Inspection entity.Inspection
 	err := json.NewDecoder(r.Body).Decode(&Inspection)
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error decoding JSON when Inspection: %w", err)r)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when Inspection: %w", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 
 	provider, err := a.Container.InspectionProvider()
 	if err != nil {
-				rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InspectionProvider: %w", err)r)
-				jsonResponse(http.StatusInternalServerError, err.Error(), w)
-				return
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InspectionProvider: %w", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
 	}
-	
+
 	err = provider.Upd(Inspection)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error Inspection"))
@@ -671,23 +689,24 @@ func (a App) UpdateInspectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(http.StatusOK, fmt.Sprintf("Inspection  : %s", Inspection), w)
 }
+
 // CreateInspectionHandler CreateIs nspection
 func (a App) CreateInspectionHandler(w http.ResponseWriter, r *http.Request) {
 	var Inspection entity.Inspection
 	err := json.NewDecoder(r.Body).Decode(&Inspection)
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error decoding JSON when Inspection: %w", err)r)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when Inspection: %w", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 
 	provider, err := a.Container.InspectionProvider()
 	if err != nil {
-				rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InspectionProvider: %w", err)r)
-				jsonResponse(http.StatusInternalServerError, err.Error(), w)
-				return
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InspectionProvider: %w", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
 	}
-	
+
 	err = provider.Cre(Inspection)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error Inspection"))
@@ -697,23 +716,24 @@ func (a App) CreateInspectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(http.StatusOK, fmt.Sprintf("Inspection  : %s", Inspection), w)
 }
+
 // DeleteInspectionHandler DeleteIs nspection
 func (a App) DeleteInspectionHandler(w http.ResponseWriter, r *http.Request) {
 	var Inspection entity.Inspection
 	err := json.NewDecoder(r.Body).Decode(&Inspection)
 	if err != nil {
-		rollbar.Warning(fmt.Sprintf("Error decoding JSON when Inspection: %w", err)r)
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when Inspection: %w", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 
 	provider, err := a.Container.InspectionProvider()
 	if err != nil {
-				rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InspectionProvider: %w", err)r)
-				jsonResponse(http.StatusInternalServerError, err.Error(), w)
-				return
+		rollbar.Warning(fmt.Sprintf("Error decoding JSON when getting InspectionProvider: %w", err), r)
+		jsonResponse(http.StatusInternalServerError, err.Error(), w)
+		return
 	}
-	
+
 	err = provider.Del(Inspection)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error Inspection"))

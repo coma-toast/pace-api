@@ -30,8 +30,8 @@ func (d *DatabaseProvider) GetAll() ([]entity.Inventory, error) {
 	return inventory, nil
 }
 
-// GetByName gets a Inventory by ID
-func (d *DatabaseProvider) GetByName(ID string) (entity.Inventory, error) {
+// GetByID gets a Inventory by ID
+func (d *DatabaseProvider) GetByID(ID string) (entity.Inventory, error) {
 	var inventory entity.Inventory
 	err := d.SharedProvider.GetFirstBy("ID", "==", ID, &inventory)
 	if err != nil {
