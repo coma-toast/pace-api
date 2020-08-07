@@ -436,9 +436,10 @@ func (a App) GetProjectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateProjectHandler handles api calls for Project
+// TODO: search by project name or by ID. Otherwise you can't update the project name
 func (a App) UpdateProjectHandler(w http.ResponseWriter, r *http.Request) {
-	var user entity.UpdateProjectRequest
-	err := json.NewDecoder(r.Body).Decode(&user)
+	var project entity.UpdateProjectRequest
+	err := json.NewDecoder(r.Body).Decode(&project)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error decoding JSON when updating a Project: %s", err), r)
 		jsonResponse(http.StatusBadRequest, err.Error(), w)
@@ -452,7 +453,7 @@ func (a App) UpdateProjectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedProject, err := provider.Update(user)
+	updatedProject, err := provider.Update(project)
 	if err != nil {
 		rollbar.Warning(fmt.Sprintf("Error setting ProjectProvider: %s", err), r)
 		jsonResponse(http.StatusInternalServerError, err.Error(), w)

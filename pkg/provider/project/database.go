@@ -33,7 +33,7 @@ func (d *DatabaseProvider) GetAll() ([]entity.Project, error) {
 // GetByName gets a Project by projectname
 func (d *DatabaseProvider) GetByName(projectname string) (entity.Project, error) {
 	var project entity.Project
-	err := d.SharedProvider.GetFirstBy("Projectname", "==", projectname, &project)
+	err := d.SharedProvider.GetFirstBy("Name", "==", projectname, &project)
 	if err != nil {
 		return entity.Project{}, fmt.Errorf("%s: %w", err, ErrProjectNotFound)
 	}
@@ -41,7 +41,7 @@ func (d *DatabaseProvider) GetByName(projectname string) (entity.Project, error)
 	return project, nil
 }
 
-// AddProject is to update a project record
+// Add is to update a project record
 func (d *DatabaseProvider) Add(newProjectData entity.Project) (entity.Project, error) {
 	rollbar.Info(fmt.Sprintf("Adding new Project to DB %s - %s", newProjectData.Name, newProjectData.Name))
 
@@ -91,10 +91,10 @@ func (d *DatabaseProvider) Add(newProjectData entity.Project) (entity.Project, e
 	return newProject, nil
 }
 
-// UpdateProject is to update a project record
+// Update is to update a project record
 func (d *DatabaseProvider) Update(newProjectData entity.UpdateProjectRequest) (entity.Project, error) {
 	var currentProjectData entity.Project
-	err := d.SharedProvider.GetFirstBy("Projectname", "==", newProjectData.Name, &currentProjectData)
+	err := d.SharedProvider.GetFirstBy("Name", "==", newProjectData.Name, &currentProjectData)
 	if err != nil {
 		return entity.Project{}, err
 	}
@@ -141,15 +141,21 @@ func (d *DatabaseProvider) Update(newProjectData entity.UpdateProjectRequest) (e
 	return updatedProjectData, nil
 }
 
-// DeleteProject is to update a project record
+// Delete is to update a project record
 func (d *DatabaseProvider) Delete(project entity.Project) error {
 	rollbar.Info(fmt.Sprintf("Deleting Project from DB: %s", project.Name))
+	var currentProject entity.Project
 
-	err := d.SharedProvider.Delete(project.ID)
+	err := d.SharedProvider.GetByID(project.ID, &currentProject)
+	if (entity.Project{}) == currentProject {
+		return fmt.Errorf("Project not found")
+	}
+
+	err = d.SharedProvider.Delete(project.ID)
 	if err != nil {
 		return err
 	}
-	rollbar.Info(fmt.Sprintf("Deleted project %s", project.Name))
+	rollbar.Info(fmt.Sprintf("Deleted project %s", project.ID))
 
 	return nil
 }

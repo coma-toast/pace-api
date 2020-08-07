@@ -116,6 +116,7 @@ func (d *DatabaseProvider) Update(newContactData entity.Contact) (entity.Contact
 
 // Delete deletes a contact
 func (d *DatabaseProvider) Delete(contact entity.Contact) error {
+	rollbar.Info(fmt.Sprintf("Deleting Contact from DB: %s", contact.ID))
 	var currentContact entity.Contact
 
 	err := d.SharedProvider.GetByID(contact.ID, &currentContact)
