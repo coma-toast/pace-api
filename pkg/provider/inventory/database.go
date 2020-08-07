@@ -122,8 +122,14 @@ func (d *DatabaseProvider) Update(newInventoryData entity.UpdateInventoryRequest
 // Delete deletes an inventory item
 func (d *DatabaseProvider) Delete(inventory entity.Inventory) error {
 	rollbar.Info(fmt.Sprintf("Deleting Inventory from DB: %s", inventory.ID))
+	var currentInventory entity.Inventory
 
-	err := d.SharedProvider.Delete(inventory.ID)
+	err := d.SharedProvider.GetByID(inventory.ID, &currentInventory)
+	if (entity.Inventory{}) == currentInventory {
+		return fmt.Errorf("Inventory not found")
+	}
+
+	err = d.SharedProvider.Delete(inventory.ID)
 	if err != nil {
 		return err
 	}

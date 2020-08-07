@@ -5,7 +5,7 @@ package entity
 
 // Inventory is an inventory item
 type Inventory struct {
-	ID        string `json:"iD"`
+	ID        string `json:"ID"`
 	Created   string `json:"created"`
 	ProjectID string `json:"projectID"`
 	Stage     Stage  `json:"stage"`
@@ -28,7 +28,7 @@ type Stage struct {
 
 // UpdateInventoryRequest is an inventory item
 type UpdateInventoryRequest struct {
-	ID        string `json:"iD"`
+	ID        string `json:"ID"`
 	ProjectID string `json:"projectID"`
 	Stage     Stage  `json:"stage"`
 	Size      int32  `json:"size"`
