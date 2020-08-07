@@ -30,10 +30,10 @@ func (d *DatabaseProvider) GetAll() ([]entity.Inspection, error) {
 	return inspections, nil
 }
 
-// GetByName gets a Inspection by inspectionname
-func (d *DatabaseProvider) GetByName(inspectionname string) (entity.Inspection, error) {
+// GetByID gets a Inspection by inspectionname
+func (d *DatabaseProvider) GetByID(ID string) (entity.Inspection, error) {
 	var inspection entity.Inspection
-	err := d.SharedProvider.GetFirstBy("Inspectionname", "==", inspectionname, &inspection)
+	err := d.SharedProvider.GetFirstBy("ID", "==", ID, &inspection)
 	if err != nil {
 		return entity.Inspection{}, fmt.Errorf("%s: %w", err, ErrInspectionNotFound)
 	}
@@ -42,24 +42,24 @@ func (d *DatabaseProvider) GetByName(inspectionname string) (entity.Inspection, 
 }
 
 // Add is to update a inspection record
-func (d *DatabaseProvider) Add(newInspectionData entity.Inspection) (entity.Inspection, error) {
-	rollbar.Info(fmt.Sprintf("Adding new Inspection to DB %s", newInspectionData.ID))
+func (d *DatabaseProvider) Add(inspectionData entity.UpdateInspectionRequest) (entity.Inspection, error) {
+	rollbar.Info(fmt.Sprintf("Adding new Inspection to DB %s", inspectionData.ID))
 
 	var existingInspection entity.Inspection
-	err := d.SharedProvider.GetFirstBy("ID", "==", newInspectionData.ID, &existingInspection)
+	err := d.SharedProvider.GetFirstBy("ID", "==", inspectionData.ID, &existingInspection)
 	if (entity.Inspection{}) != existingInspection {
-		return entity.Inspection{}, fmt.Errorf("Error adding inspection %s: Inspectionname already exists. ID: %s", newInspectionData.ID, existingInspection.ID)
+		return entity.Inspection{}, fmt.Errorf("Error adding inspection %s: ID already exists. ID: %s", inspectionData.ID, existingInspection.ID)
 	}
 
 	newUUID := uuid.New().String()
-	newInspectionData = entity.Inspection{
+	newInspectionData := entity.Inspection{
 		ID:             newUUID,
 		Created:        time.Now().String(),
-		ProjectID:      newInspectionData.ProjectID,
-		Username:       newInspectionData.Username,
-		StartTime:      newInspectionData.StartTime,
-		EndTime:        newInspectionData.EndTime,
-		InspectedParts: newInspectionData.InspectedParts,
+		ProjectID:      inspectionData.ProjectID,
+		Username:       inspectionData.Username,
+		StartTime:      inspectionData.StartTime,
+		EndTime:        inspectionData.EndTime,
+		InspectedParts: inspectionData.InspectedParts,
 	}
 	err = d.SharedProvider.Set(newInspectionData.ID, newInspectionData)
 	if err != nil {

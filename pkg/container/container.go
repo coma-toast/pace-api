@@ -123,7 +123,7 @@ func (p Production) ProjectProvider() (project.Provider, error) {
 	p.projectProvider = &project.DatabaseProvider{
 		SharedProvider: &firestoredb.DatabaseProvider{
 			Database:   firestoreConnection,
-			Collection: "project",
+			Collection: "projects",
 		},
 	}
 
@@ -144,7 +144,7 @@ func (p Production) InspectionProvider() (inspection.Provider, error) {
 	p.inspectionProvider = &inspection.DatabaseProvider{
 		SharedProvider: &firestoredb.DatabaseProvider{
 			Database:   firestoreConnection,
-			Collection: "inspection",
+			Collection: "inspections",
 		},
 	}
 
