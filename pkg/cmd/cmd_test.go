@@ -27,9 +27,9 @@ func TestUser(t *testing.T) {
 	a := App{}
 	testingServer := httptest.NewServer(a.getHandlers())
 	defer testingServer.Close()
-	response, err := http.Get(fmt.Sprintf("%s/api/ping", testingServer.URL))
+	response, err := http.Get(fmt.Sprintf("%s/api/user", testingServer.URL))
 	if err != nil {
-		t.Error("Error getting Ping response: ", err)
+		t.Error("Error getting user response: ", err)
 	}
 	body, _ := ioutil.ReadAll(response.Body)
 	if !reflect.DeepEqual(body, []byte("\"Pong\"")) {

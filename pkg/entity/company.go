@@ -2,15 +2,15 @@ package entity
 
 // Company is a contact company
 type Company struct {
-	ID             string
-	Created        string
-	Name           string
-	PrimaryContact string
-	Contacts       []string
-	Phone          string
-	Email          string
-	Address        string
-	City           string
-	State          string
-	Zip            int32
+	ID             string `json:"id"`
+	Created        string `json:"created"`
+	Name           string `json:"name"`
+	PrimaryContact string `json:"primaryContact"`
+	Contacts       string `json:"contacts"`
+	Phone          string `json:"phone"`
+	Email          string `json:"email"`
+	Address        string `json:"address"`
+	City           string `json:"city"`
+	State          string `json:"state"`
+	Zip            int32  `json:"zip"`
 }

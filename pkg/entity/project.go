@@ -4,50 +4,50 @@ package entity
 // If you want phone number update, for eample, use a contact id
 // Project is a construction project
 type Project struct {
-	ID                  string
-	Created             string
-	Name                string
-	StartDate           string
-	DueDate             string
-	Address             string
-	City                string
-	State               string
-	Zip                 int32
-	ProjectManager      string
-	ClientName          string
-	EORName             string
-	DetailerName        string
-	InspectionLab       string
-	SteelErectorName    string
-	SteelFabricatorName string
-	GeneralContractor   string
-	PrimaryContactName  string
-	PrimaryContactPhone string
-	PrimaryContactEmail string
-	SquareFootage       int32
-	WeightInTons        int32
+	ID                  string `json:"id"`
+	Created             string `json:"created"`
+	Name                string `json:"name"`
+	StartDate           string `json:"startDate"`
+	DueDate             string `json:"dueDate"`
+	Address             string `json:"address"`
+	City                string `json:"city"`
+	State               string `json:"state"`
+	Zip                 int32  `json:"zip"`
+	ProjectManager      string `json:"projectManager"`
+	ClientName          string `json:"clientName"`
+	EORName             string `json:"eORName"`
+	DetailerName        string `json:"detailerName"`
+	InspectionLab       string `json:"inspectionLab"`
+	SteelErectorName    string `json:"steelErectorName"`
+	SteelFabricatorName string `json:"steelFabricatorName"`
+	GeneralContractor   string `json:"generalContractor"`
+	PrimaryContactName  string `json:"primaryContactName"`
+	PrimaryContactPhone string `json:"primaryContactPhone"`
+	PrimaryContactEmail string `json:"primaryContactEmail"`
+	SquareFootage       int32  `json:"squareFootage"`
+	WeightInTons        int32  `json:"weightInTons"`
 }
 
 // UpdateProjectRequest is a construction project
 type UpdateProjectRequest struct {
-	Name                string
-	StartDate           string
-	DueDate             string
-	Address             string
-	City                string
-	State               string
-	Zip                 int32
-	ProjectManager      string
-	ClientName          string
-	EORName             string
-	DetailerName        string
-	InspectionLab       string
-	SteelErectorName    string
-	SteelFabricatorName string
-	GeneralContractor   string
-	PrimaryContactName  string
-	PrimaryContactPhone string
-	PrimaryContactEmail string
-	SquareFootage       int32
-	WeightInTons        int32
+	Name                string `json:"name"`
+	StartDate           string `json:"startDate"`
+	DueDate             string `json:"dueDate"`
+	Address             string `json:"address"`
+	City                string `json:"city"`
+	State               string `json:"state"`
+	Zip                 int32  `json:"zip"`
+	ProjectManager      string `json:"projectManager"`
+	ClientName          string `json:"clientName"`
+	EORName             string `json:"eORName"`
+	DetailerName        string `json:"detailerName"`
+	InspectionLab       string `json:"inspectionLab"`
+	SteelErectorName    string `json:"steelErectorName"`
+	SteelFabricatorName string `json:"steelFabricatorName"`
+	GeneralContractor   string `json:"generalContractor"`
+	PrimaryContactName  string `json:"primaryContactName"`
+	PrimaryContactPhone string `json:"primaryContactPhone"`
+	PrimaryContactEmail string `json:"primaryContactEmail"`
+	SquareFootage       int32  `json:"squareFootage"`
+	WeightInTons        int32  `json:"weightInTons"`
 }
