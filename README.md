@@ -15,3 +15,7 @@ Pre-launch:
 * Import take off sheet data as inventory
 * DB of all shapes
 
+TODO:
+* When no items found, return an empty json instead of `null`
+* Return a `status` as well as the json (maybe?)
+
