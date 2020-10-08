@@ -10,7 +10,7 @@ type Contact struct {
 	Email     string `json:"email"`
 	Phone     string `json:"phone"`
 	Timezone  string `json:"timezone"`
-	Favorite  string `json:"favorite"`
-	Deleted   string `json:"deleted"`
+	Favorite  bool   `json:"favorite"`
+	Deleted   bool   `json:"deleted"`
 	Instance  string `json:"instance"`
 }
