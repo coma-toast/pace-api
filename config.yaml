@@ -1,3 +1,3 @@
 DocumentDBUrl: "firebase.com"
-FirebaseConfig: "./Firebase.json"
+FirebaseConfig: "Firebase.json"
 RollbarToken: "913396d7517740fe999c3829498f8a11"

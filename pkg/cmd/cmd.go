@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -34,7 +35,10 @@ func Run() {
 	app := App{}
 	var err error
 
-	conf, err := paceconfig.GetConf()
+	configPath := flag.String("conf", ".", "config path")
+	flag.Parse()
+
+	conf, err := paceconfig.GetConf(*configPath)
 	if err != nil {
 		log.Fatalf("Error getting config: %s", err)
 	}

@@ -15,4 +15,5 @@ build-mac: dep ## Build for Mac dev machine. Prod will be linux
 deploy: build
 	# ssh jjd "pkill pace-api"
 	rsync pace-api jjd:/home/jason/www-data/pace-api/
+	rsync pace-api.sh jjd:/home/jason/www-data/pace-api/
 	# ssh jjd "/home/jason/www-data/pace-api/pace-api &; disown"
