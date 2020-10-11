@@ -97,6 +97,8 @@ func (d *DatabaseProvider) Update(newContactData entity.Contact) (entity.Contact
 		Email:     newContactData.Email,
 		Phone:     newContactData.Phone,
 		Timezone:  newContactData.Timezone,
+		Favorite:  newContactData.Favorite,
+		Deleted:   newContactData.Deleted,
 		Instance:  newContactData.Instance,
 	}
 
