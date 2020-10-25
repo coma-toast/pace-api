@@ -750,5 +750,8 @@ func jsonResponse(statusCode int, v interface{}, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	data, _ := json.Marshal(v)
+	if string(data) == "null" {
+		data = []byte("[]")
+	}
 	w.Write(data)
 }
