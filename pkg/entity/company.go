@@ -12,7 +12,7 @@ type Company struct {
 	Address        string `json:"address"`
 	City           string `json:"city"`
 	State          string `json:"state"`
-	Zip            int32  `json:"zip"`
+	Zip            string `json:"zip"`
 	Favorite       bool   `json:"favorite"`
 	Deleted        bool   `json:"deleted"`
 	Instance       string `json:"instance"`
