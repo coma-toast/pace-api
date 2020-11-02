@@ -6,7 +6,6 @@ type Company struct {
 	Created        string `json:"created"`
 	Name           string `json:"name"`
 	PrimaryContact string `json:"primaryContact"`
-	Contacts       string `json:"contacts"`
 	Phone          string `json:"phone"`
 	Email          string `json:"email"`
 	Address        string `json:"address"`
