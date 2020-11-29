@@ -17,7 +17,7 @@ type Project struct {
 	State               string    `json:"state"`
 	Zip                 int32     `json:"zip"`
 	ProjectManager      string    `json:"projectManager"`
-	ClientName          string    `json:"clientName"`
+	ClientID            string    `json:"clientID"`
 	EORName             string    `json:"eORName"`
 	DetailerName        string    `json:"detailerName"`
 	InspectionLab       string    `json:"inspectionLab"`
@@ -42,7 +42,7 @@ type UpdateProjectRequest struct {
 	State               string `json:"state"`
 	Zip                 int32  `json:"zip"`
 	ProjectManager      string `json:"projectManager"`
-	ClientName          string `json:"clientName"`
+	ClientID            string `json:"clientID"`
 	EORName             string `json:"eORName"`
 	DetailerName        string `json:"detailerName"`
 	InspectionLab       string `json:"inspectionLab"`
