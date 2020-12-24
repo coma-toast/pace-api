@@ -54,7 +54,7 @@ func (d *DatabaseProvider) Add(inspectionData entity.UpdateInspectionRequest) (e
 	newUUID := uuid.New().String()
 	newInspectionData := entity.Inspection{
 		ID:             newUUID,
-		Created:        time.Now().String(),
+		Created:        time.Now().Format(time.RFC3339),
 		ProjectID:      inspectionData.ProjectID,
 		Username:       inspectionData.Username,
 		StartTime:      inspectionData.StartTime,

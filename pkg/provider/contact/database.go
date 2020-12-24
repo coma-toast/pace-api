@@ -55,7 +55,7 @@ func (d *DatabaseProvider) Add(newContactData entity.Contact) (entity.Contact, e
 	newUUID := uuid.New().String()
 	newContactData = entity.Contact{
 		ID:        newUUID,
-		Created:   time.Now().String(),
+		Created:   time.Now().Format(time.RFC3339),
 		FirstName: newContactData.FirstName,
 		LastName:  newContactData.LastName,
 		Company:   newContactData.Company,

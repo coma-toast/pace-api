@@ -54,7 +54,7 @@ func (d *DatabaseProvider) Add(newInventoryData entity.Inventory) (entity.Invent
 	newUUID := uuid.New().String()
 	newInventoryData = entity.Inventory{
 		ID:        newUUID,
-		Created:   time.Now().String(),
+		Created:   time.Now().Format(time.RFC3339),
 		ProjectID: newInventoryData.ProjectID,
 		Stage:     newInventoryData.Stage,
 		Size:      newInventoryData.Size,

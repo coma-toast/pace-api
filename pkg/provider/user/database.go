@@ -55,7 +55,7 @@ func (d *DatabaseProvider) Add(userData entity.User) (entity.User, error) {
 	newUUID := uuid.New().String()
 	userData = entity.User{
 		ID:        newUUID,
-		Created:   time.Now().String(),
+		Created:   time.Now().Format(time.RFC3339),
 		FirstName: userData.FirstName,
 		LastName:  userData.LastName,
 		Role:      userData.Role,

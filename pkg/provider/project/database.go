@@ -54,7 +54,7 @@ func (d *DatabaseProvider) Add(newProjectData entity.Project) (entity.Project, e
 	newUUID := uuid.New().String()
 	newProjectData = entity.Project{
 		ID:                  newUUID,
-		Created:             time.Now(),
+		Created:             time.Now().Format(time.RFC3339),
 		Name:                newProjectData.Name,
 		StartDate:           newProjectData.StartDate,
 		DueDate:             newProjectData.DueDate,
