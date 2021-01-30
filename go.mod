@@ -10,6 +10,7 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/relvacode/iso8601 v1.1.0
 	github.com/rollbar/rollbar-go v1.2.0
 	github.com/spf13/viper v1.7.0
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
