@@ -30,7 +30,7 @@ TimeoutStartSec=0
 [Install]
 WantedBy=default.target
 ```
-## Script to start:
+## Example Script to start:
 
 `/home/jason/www-data/pace-api/pace-api.sh`
 ```
